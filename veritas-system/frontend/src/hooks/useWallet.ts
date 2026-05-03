@@ -13,6 +13,14 @@ export interface WalletState {
   switchToPolygon: (provider: ethers.BrowserProvider) => Promise<void>;
 }
 
+function isMobile(): boolean {
+  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
+
+function hasMetaMask(): boolean {
+  return typeof window !== 'undefined' && !!(window as any).ethereum;
+}
+
 export function useWallet(): WalletState {
   const [address, setAddress] = useState<string | null>(null);
   const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
@@ -21,14 +29,25 @@ export function useWallet(): WalletState {
   const [connecting, setConnecting] = useState(false);
 
   const connect = useCallback(async () => {
-    if (!window.ethereum) {
-      toast.error('MetaMask not found. Please install it first.');
+    // On mobile without injected wallet — open MetaMask deep link
+    if (isMobile() && !hasMetaMask()) {
+      const currentUrl = encodeURIComponent(window.location.href);
+      window.location.href = `https://metamask.app.link/dapp/${window.location.host}`;
       return;
     }
+
+    if (!hasMetaMask()) {
+      toast.error('MetaMask not found. Please install MetaMask to continue.');
+      setTimeout(() => {
+        window.open('https://metamask.io/download/', '_blank');
+      }, 1500);
+      return;
+    }
+
     setConnecting(true);
     try {
       const _provider = new ethers.BrowserProvider(
-        window.ethereum as ethers.Eip1193Provider
+        (window as any).ethereum as ethers.Eip1193Provider
       );
       await _provider.send('eth_requestAccounts', []);
       const _signer = await _provider.getSigner();
@@ -39,8 +58,13 @@ export function useWallet(): WalletState {
       setSigner(_signer);
       setAddress(_address);
       setChainId(_chainId);
-    } catch {
-      toast.error('Failed to connect wallet');
+      toast.success('Wallet connected!');
+    } catch (err: any) {
+      if (err?.code === 4001) {
+        toast.error('Connection cancelled');
+      } else {
+        toast.error('Failed to connect wallet. Please try again.');
+      }
     } finally {
       setConnecting(false);
     }
@@ -51,6 +75,7 @@ export function useWallet(): WalletState {
     setProvider(null);
     setSigner(null);
     setChainId(null);
+    toast.success('Wallet disconnected');
   }, []);
 
   const switchToPolygon = useCallback(

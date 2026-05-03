@@ -10,10 +10,7 @@ import HowItWorks from './pages/HowItWorks';
 import Admin from './pages/Admin';
 import translations from './i18n/translations.json';
 
-// ─── i18n context ─────────────────────────────────────────────────────────────
-
 type Lang = 'en' | 'es';
-type Translations = typeof translations.en;
 
 interface I18nContextType {
   lang: Lang;
@@ -31,8 +28,6 @@ export function useI18n() {
   return useContext(I18nContext);
 }
 
-// ─── Theme context ────────────────────────────────────────────────────────────
-
 interface ThemeContextType {
   dark: boolean;
   toggleTheme: () => void;
@@ -47,15 +42,11 @@ export function useTheme() {
   return useContext(ThemeContext);
 }
 
-// ─── Query client ─────────────────────────────────────────────────────────────
-
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { staleTime: 30_000, retry: 2 },
   },
 });
-
-// ─── App ──────────────────────────────────────────────────────────────────────
 
 function getNestedValue(obj: Record<string, unknown>, path: string): string {
   return path.split('.').reduce<unknown>((current, key) => {
@@ -68,18 +59,37 @@ function getNestedValue(obj: Record<string, unknown>, path: string): string {
 
 export default function App() {
   const [lang, setLang] = useState<Lang>('en');
-  const [dark, setDark] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('theme') === 'dark' ||
-        window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+  // Read saved theme from localStorage on first load
+  const [dark, setDark] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('theme');
+      if (saved === 'dark') return true;
+      if (saved === 'light') return false;
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    } catch {
+      return false;
     }
-    return false;
   });
 
+  // Every time dark changes, update the HTML element class AND save to storage
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', dark);
-    localStorage.setItem('theme', dark ? 'dark' : 'light');
+    const root = document.documentElement;
+    if (dark) {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    try {
+      localStorage.setItem('theme', dark ? 'dark' : 'light');
+    } catch {
+      // ignore
+    }
   }, [dark]);
+
+  function toggleTheme() {
+    setDark((prev) => !prev);
+  }
 
   const t = (path: string): string => {
     const dict = translations[lang] as unknown as Record<string, unknown>;
@@ -89,9 +99,7 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <I18nContext.Provider value={{ lang, setLang, t }}>
-        <ThemeContext.Provider
-          value={{ dark, toggleTheme: () => setDark((d) => !d) }}
-        >
+        <ThemeContext.Provider value={{ dark, toggleTheme }}>
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Layout />}>

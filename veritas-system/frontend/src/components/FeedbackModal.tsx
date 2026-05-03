@@ -2,8 +2,6 @@ import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useI18n } from '../App';
 
-const API = (import.meta as any).env?.VITE_API_BASE_URL ?? '';
-
 interface FeedbackModalProps {
   open: boolean;
   onClose: () => void;
@@ -21,7 +19,8 @@ export default function FeedbackModal({ open, onClose, wallet }: FeedbackModalPr
     if (!message.trim()) return;
     setSending(true);
     try {
-      const res = await fetch(`${API}/api/feedback`, {
+      // Use relative URL so it always works on any domain
+      const res = await fetch('/api/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: message.trim(), wallet }),
