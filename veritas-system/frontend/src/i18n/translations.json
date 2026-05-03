@@ -1,0 +1,190 @@
+{
+  "en": {
+    "nav": {
+      "markets": "Markets",
+      "howItWorks": "How It Works",
+      "dashboard": "Dashboard",
+      "admin": "Admin"
+    },
+    "hero": {
+      "title": "Predict the Future.",
+      "subtitle": "Earn on Truth.",
+      "description": "Trade on real-world outcomes using decentralised prediction markets powered by Azuro.",
+      "cta": "Browse Markets"
+    },
+    "markets": {
+      "title": "Active Markets",
+      "noMarkets": "No active markets right now. Check back soon!",
+      "yes": "YES",
+      "no": "NO",
+      "endsIn": "Ends",
+      "trade": "Trade",
+      "odds": "Odds"
+    },
+    "trade": {
+      "title": "Place a Bet",
+      "selectOutcome": "Select Outcome",
+      "amount": "Amount (USDC)",
+      "potentialWin": "Potential Win",
+      "confirm": "Confirm Bet",
+      "connecting": "Connecting…",
+      "success": "Bet placed successfully!",
+      "error": "Transaction failed. Please try again."
+    },
+    "dashboard": {
+      "title": "My Dashboard",
+      "openBets": "Open Bets",
+      "claimable": "Claimable Winnings",
+      "claim": "Claim",
+      "referrals": "Referrals",
+      "referralLink": "Your Referral Link",
+      "copy": "Copy",
+      "copied": "Copied!",
+      "pendingRewards": "Pending Rewards",
+      "claimRewards": "Claim Rewards",
+      "connectWallet": "Connect your wallet to view your dashboard."
+    },
+    "howItWorks": {
+      "title": "How Veritas Works",
+      "step1Title": "Connect Your Wallet",
+      "step1Desc": "Use MetaMask or WalletConnect on Polygon. No sign-up needed.",
+      "step2Title": "Browse Markets",
+      "step2Desc": "Find events you have an opinion on – sports, politics, crypto, and more.",
+      "step3Title": "Place a Bet",
+      "step3Desc": "Choose YES or NO, set your USDC amount, and confirm the transaction.",
+      "step4Title": "Get Paid",
+      "step4Desc": "Azuro's oracle resolves the market automatically. Winnings are claimable instantly."
+    },
+    "referral": {
+      "banner": "Invite friends and earn 1 USDC per first trade!",
+      "getLink": "Get My Link"
+    },
+    "feedback": {
+      "button": "Feedback",
+      "title": "Send Feedback",
+      "placeholder": "Tell us what you think…",
+      "submit": "Send",
+      "success": "Thanks for your feedback!",
+      "anonymous": "Sent anonymously"
+    },
+    "admin": {
+      "title": "Admin Panel",
+      "login": "Login",
+      "password": "Password",
+      "logout": "Logout",
+      "uploadCsv": "Upload CSV",
+      "upload": "Upload",
+      "scheduledMarkets": "Scheduled Markets",
+      "pending": "Pending",
+      "published": "Published",
+      "failed": "Failed",
+      "question": "Question",
+      "publishTime": "Publish Time",
+      "endTime": "End Time",
+      "status": "Status",
+      "azuroId": "Azuro ID"
+    },
+    "common": {
+      "connectWallet": "Connect Wallet",
+      "disconnect": "Disconnect",
+      "loading": "Loading…",
+      "error": "Something went wrong.",
+      "darkMode": "Dark Mode",
+      "lightMode": "Light Mode"
+    }
+  },
+  "es": {
+    "nav": {
+      "markets": "Mercados",
+      "howItWorks": "Cómo Funciona",
+      "dashboard": "Panel",
+      "admin": "Admin"
+    },
+    "hero": {
+      "title": "Predice el Futuro.",
+      "subtitle": "Gana con la Verdad.",
+      "description": "Opera en resultados del mundo real usando mercados de predicción descentralizados impulsados por Azuro.",
+      "cta": "Ver Mercados"
+    },
+    "markets": {
+      "title": "Mercados Activos",
+      "noMarkets": "No hay mercados activos ahora. ¡Vuelve pronto!",
+      "yes": "SÍ",
+      "no": "NO",
+      "endsIn": "Termina",
+      "trade": "Operar",
+      "odds": "Cuotas"
+    },
+    "trade": {
+      "title": "Hacer una Apuesta",
+      "selectOutcome": "Seleccionar Resultado",
+      "amount": "Cantidad (USDC)",
+      "potentialWin": "Ganancia Potencial",
+      "confirm": "Confirmar Apuesta",
+      "connecting": "Conectando…",
+      "success": "¡Apuesta realizada con éxito!",
+      "error": "Transacción fallida. Inténtalo de nuevo."
+    },
+    "dashboard": {
+      "title": "Mi Panel",
+      "openBets": "Apuestas Abiertas",
+      "claimable": "Ganancias Reclamables",
+      "claim": "Reclamar",
+      "referrals": "Referidos",
+      "referralLink": "Tu Enlace de Referido",
+      "copy": "Copiar",
+      "copied": "¡Copiado!",
+      "pendingRewards": "Recompensas Pendientes",
+      "claimRewards": "Reclamar Recompensas",
+      "connectWallet": "Conecta tu billetera para ver tu panel."
+    },
+    "howItWorks": {
+      "title": "Cómo Funciona Veritas",
+      "step1Title": "Conecta tu Billetera",
+      "step1Desc": "Usa MetaMask o WalletConnect en Polygon. Sin registro.",
+      "step2Title": "Navega los Mercados",
+      "step2Desc": "Encuentra eventos sobre los que tengas una opinión.",
+      "step3Title": "Haz una Apuesta",
+      "step3Desc": "Elige SÍ o NO, establece tu cantidad en USDC y confirma.",
+      "step4Title": "Cobra",
+      "step4Desc": "El oráculo de Azuro resuelve el mercado automáticamente."
+    },
+    "referral": {
+      "banner": "¡Invita amigos y gana 1 USDC por primera operación!",
+      "getLink": "Obtener Mi Enlace"
+    },
+    "feedback": {
+      "button": "Comentarios",
+      "title": "Enviar Comentarios",
+      "placeholder": "Cuéntanos qué piensas…",
+      "submit": "Enviar",
+      "success": "¡Gracias por tus comentarios!",
+      "anonymous": "Enviado anónimamente"
+    },
+    "admin": {
+      "title": "Panel de Admin",
+      "login": "Iniciar Sesión",
+      "password": "Contraseña",
+      "logout": "Cerrar Sesión",
+      "uploadCsv": "Subir CSV",
+      "upload": "Subir",
+      "scheduledMarkets": "Mercados Programados",
+      "pending": "Pendiente",
+      "published": "Publicado",
+      "failed": "Fallido",
+      "question": "Pregunta",
+      "publishTime": "Hora de Publicación",
+      "endTime": "Hora de Cierre",
+      "status": "Estado",
+      "azuroId": "ID de Azuro"
+    },
+    "common": {
+      "connectWallet": "Conectar Billetera",
+      "disconnect": "Desconectar",
+      "loading": "Cargando…",
+      "error": "Algo salió mal.",
+      "darkMode": "Modo Oscuro",
+      "lightMode": "Modo Claro"
+    }
+  }
+}
