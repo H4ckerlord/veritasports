@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 
-const API = import.meta.env.VITE_API_BASE_URL ?? '';
+const API = (import.meta as any).env?.VITE_API_BASE_URL ?? '';
 
 export interface ReferralData {
   referralCode: string | null;
@@ -19,7 +19,6 @@ export function useReferral(wallet: string | null) {
   const [data, setData] = useState<ReferralData | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Apply referral code from URL query param on mount
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const refCode = params.get('ref');
@@ -35,12 +34,11 @@ export function useReferral(wallet: string | null) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code, wallet }),
       });
-      // Remove ref param from URL without reloading
       const url = new URL(window.location.href);
       url.searchParams.delete('ref');
       window.history.replaceState({}, '', url.toString());
     } catch {
-      // Silent – non-critical
+      // silent
     }
   }
 
@@ -54,7 +52,7 @@ export function useReferral(wallet: string | null) {
       const json = await res.json() as ReferralData;
       setData(json);
     } catch {
-      // Silent
+      // silent
     } finally {
       setLoading(false);
     }
@@ -85,7 +83,9 @@ export function useReferral(wallet: string | null) {
         body: JSON.stringify({ wallet }),
       });
       const json = await res.json() as { message: string; amount?: string };
-      toast.success(`${json.message}${json.amount ? ` – ${json.amount} USDC` : ''}`);
+      toast.success(
+        `${json.message}${json.amount ? ` – ${json.amount} USDC` : ''}`
+      );
       await fetchReferralData(wallet);
     } catch {
       toast.error('Claim failed. Try again later.');
@@ -97,9 +97,10 @@ export function useReferral(wallet: string | null) {
     else setData(null);
   }, [wallet]);
 
-  const referralLink = data?.referralCode
-    ? `${window.location.origin}?ref=${data.referralCode}`
-    : null;
+  const referralLink =
+    data?.referralCode
+      ? `${window.location.origin}?ref=${data.referralCode}`
+      : null;
 
   return { data, loading, referralLink, generateCode, claimRewards };
 }

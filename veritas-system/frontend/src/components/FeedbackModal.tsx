@@ -2,7 +2,7 @@ import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useI18n } from '../App';
 
-const API = import.meta.env.VITE_API_BASE_URL ?? '';
+const API = (import.meta as any).env?.VITE_API_BASE_URL ?? '';
 
 interface FeedbackModalProps {
   open: boolean;
@@ -54,7 +54,6 @@ export default function FeedbackModal({ open, onClose, wallet }: FeedbackModalPr
             ×
           </button>
         </div>
-
         <div className="p-5 space-y-4">
           <textarea
             value={message}
@@ -64,15 +63,10 @@ export default function FeedbackModal({ open, onClose, wallet }: FeedbackModalPr
             maxLength={1000}
             className="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 resize-none focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm"
           />
-
-          <p className="text-xs text-gray-400 text-right">
-            {message.length}/1000
-          </p>
-
+          <p className="text-xs text-gray-400 text-right">{message.length}/1000</p>
           {!wallet && (
             <p className="text-xs text-gray-400 italic">{t('feedback.anonymous')}</p>
           )}
-
           <button
             onClick={handleSubmit}
             disabled={sending || message.trim().length === 0}

@@ -43,11 +43,9 @@ export default function Dashboard() {
     return (
       <div className="max-w-lg mx-auto text-center py-24 space-y-4">
         <div className="text-5xl">🔐</div>
-        <p className="text-gray-500 dark:text-gray-400">
-          {t('dashboard.connectWallet')}
-        </p>
+        <p className="text-gray-500 dark:text-gray-400">{t('dashboard.connectWallet')}</p>
         <button
-          onClick={wallet.connect}
+          onClick={() => wallet.connect()}
           className="bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3 rounded-xl transition"
         >
           {t('common.connectWallet')}
@@ -58,50 +56,32 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-        {t('dashboard.title')}
-      </h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('dashboard.title')}</h1>
 
-      {/* Wallet */}
       <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
         <p className="text-xs text-gray-400 mb-1">Connected Wallet</p>
-        <p className="font-mono text-sm text-gray-700 dark:text-gray-300 break-all">
-          {wallet.address}
-        </p>
+        <p className="font-mono text-sm text-gray-700 dark:text-gray-300 break-all">{wallet.address}</p>
       </div>
 
-      {/* Open bets note */}
       <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
-        <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">
-          {t('dashboard.openBets')}
-        </h2>
+        <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">{t('dashboard.openBets')}</h2>
         <p className="text-sm text-gray-400">
           Your open bets and claimable winnings are managed directly on Azuro.{' '}
-          <a
-            href="https://azuro.org"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-brand-500 hover:underline"
-          >
+          <a href="https://azuro.org" target="_blank" rel="noopener noreferrer" className="text-brand-500 hover:underline">
             Visit Azuro →
           </a>
         </p>
       </div>
 
-      {/* Referrals */}
       <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5 space-y-4">
-        <h2 className="font-semibold text-gray-900 dark:text-gray-100">
-          {t('dashboard.referrals')}
-        </h2>
+        <h2 className="font-semibold text-gray-900 dark:text-gray-100">{t('dashboard.referrals')}</h2>
 
         {referralLoading ? (
           <div className="h-16 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />
         ) : referralLink ? (
           <>
             <div>
-              <p className="text-xs text-gray-400 mb-2">
-                {t('dashboard.referralLink')}
-              </p>
+              <p className="text-xs text-gray-400 mb-2">{t('dashboard.referralLink')}</p>
               <div className="flex gap-2">
                 <input
                   readOnly
@@ -122,17 +102,13 @@ export default function Dashboard() {
                 <p className="text-2xl font-bold text-brand-600 dark:text-brand-400">
                   {referralData?.pendingUsdc ?? '0.00'}
                 </p>
-                <p className="text-xs text-gray-400 mt-1">
-                  {t('dashboard.pendingRewards')} USDC
-                </p>
+                <p className="text-xs text-gray-400 mt-1">{t('dashboard.pendingRewards')} USDC</p>
               </div>
               <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 text-center">
                 <p className="text-2xl font-bold text-gray-600 dark:text-gray-400">
                   {referralData?.claimedUsdc ?? '0.00'}
                 </p>
-                <p className="text-xs text-gray-400 mt-1">
-                  Claimed USDC
-                </p>
+                <p className="text-xs text-gray-400 mt-1">Claimed USDC</p>
               </div>
             </div>
 

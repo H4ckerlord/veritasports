@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
-const API = import.meta.env.VITE_API_BASE_URL ?? '';
+const API = (import.meta as any).env?.VITE_API_BASE_URL ?? '';
 
 export interface Outcome {
   outcomeId: string;
@@ -29,7 +29,7 @@ export function useAzuroMarkets() {
   return useQuery({
     queryKey: ['azuro-markets'],
     queryFn: fetchMarkets,
-    refetchInterval: 60_000, // refresh every minute
+    refetchInterval: 60_000,
   });
 }
 
