@@ -1,5 +1,8 @@
 {
   "version": 2,
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "outputDirectory": "frontend/dist",
+  "installCommand": "cd backend && npm install",
   "builds": [
     {
       "src": "frontend/package.json",
@@ -7,24 +10,66 @@
       "config": {
         "distDir": "dist"
       }
+    },
+    {
+      "src": "backend/api/**/*.ts",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": [
+          "backend/db/**",
+          "backend/services/**"
+        ]
+      }
     }
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "/backend/api/$1"
+      "src": "/api/admin/login",
+      "dest": "backend/api/admin/login.ts"
     },
     {
-      "src": "^/assets/(.*)",
-      "dest": "/frontend/dist/assets/$1"
+      "src": "/api/admin/schedule",
+      "dest": "backend/api/admin/schedule.ts"
     },
     {
-      "src": "^/favicon.svg",
-      "dest": "/frontend/dist/favicon.svg"
+      "src": "/api/admin/status",
+      "dest": "backend/api/admin/status.ts"
     },
     {
-      "src": ".*",
-      "dest": "/frontend/dist/index.html"
+      "src": "/api/referral/register",
+      "dest": "backend/api/referral/register.ts"
+    },
+    {
+      "src": "/api/referral/rewards",
+      "dest": "backend/api/referral/rewards.ts"
+    },
+    {
+      "src": "/api/referral/claim",
+      "dest": "backend/api/referral/claim.ts"
+    },
+    {
+      "src": "/api/referral/generate",
+      "dest": "backend/api/referral/generate.ts"
+    },
+    {
+      "src": "/api/feedback",
+      "dest": "backend/api/feedback.ts"
+    },
+    {
+      "src": "/api/markets",
+      "dest": "backend/api/markets.ts"
+    },
+    {
+      "src": "/api/cron/publishMarkets",
+      "dest": "backend/api/cron/publishMarkets.ts"
+    },
+    {
+      "src": "/api/cron/processReferralRewards",
+      "dest": "backend/api/cron/processReferralRewards.ts"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "frontend/dist/index.html"
     }
   ],
   "crons": [
