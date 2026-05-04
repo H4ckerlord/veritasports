@@ -1,72 +1,16 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    },
-    {
-      "src": "backend/api/**/*.ts",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": [
-          "backend/db/**",
-          "backend/services/**"
-        ]
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/admin/login",
-      "dest": "backend/api/admin/login.ts"
-    },
-    {
-      "src": "/api/admin/schedule",
-      "dest": "backend/api/admin/schedule.ts"
-    },
-    {
-      "src": "/api/admin/status",
-      "dest": "backend/api/admin/status.ts"
-    },
-    {
-      "src": "/api/referral/register",
-      "dest": "backend/api/referral/register.ts"
-    },
-    {
-      "src": "/api/referral/rewards",
-      "dest": "backend/api/referral/rewards.ts"
-    },
-    {
-      "src": "/api/referral/claim",
-      "dest": "backend/api/referral/claim.ts"
-    },
-    {
-      "src": "/api/referral/generate",
-      "dest": "backend/api/referral/generate.ts"
-    },
-    {
-      "src": "/api/feedback",
-      "dest": "backend/api/feedback.ts"
-    },
-    {
-      "src": "/api/markets",
-      "dest": "backend/api/markets.ts"
-    },
-    {
-      "src": "/api/cron/publishMarkets",
-      "dest": "backend/api/cron/publishMarkets.ts"
-    },
-    {
-      "src": "/api/cron/processReferralRewards",
-      "dest": "backend/api/cron/processReferralRewards.ts"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "frontend/dist/index.html"
-    }
+  "rewrites": [
+    { "source": "/api/admin/login", "destination": "/backend/api/admin/login.ts" },
+    { "source": "/api/admin/schedule", "destination": "/backend/api/admin/schedule.ts" },
+    { "source": "/api/admin/status", "destination": "/backend/api/admin/status.ts" },
+    { "source": "/api/referral/register", "destination": "/backend/api/referral/register.ts" },
+    { "source": "/api/referral/rewards", "destination": "/backend/api/referral/rewards.ts" },
+    { "source": "/api/referral/claim", "destination": "/backend/api/referral/claim.ts" },
+    { "source": "/api/referral/generate", "destination": "/backend/api/referral/generate.ts" },
+    { "source": "/api/feedback", "destination": "/backend/api/feedback.ts" },
+    { "source": "/api/markets", "destination": "/backend/api/markets.ts" },
+    { "source": "/api/cron/publishMarkets", "destination": "/backend/api/cron/publishMarkets.ts" },
+    { "source": "/api/cron/processReferralRewards", "destination": "/backend/api/cron/processReferralRewards.ts" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
