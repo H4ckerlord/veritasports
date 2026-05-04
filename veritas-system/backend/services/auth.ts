@@ -9,8 +9,7 @@ export function signAdminToken(): string {
 
 export function verifyAdminToken(req: IncomingMessage): boolean {
   try {
-    const header = (req as { headers: Record<string, string | undefined> })
-      .headers['authorization'];
+    const header = (req as any).headers['authorization'];
     if (!header?.startsWith('Bearer ')) return false;
     const token = header.slice(7);
     jwt.verify(token, JWT_SECRET);
@@ -20,9 +19,7 @@ export function verifyAdminToken(req: IncomingMessage): boolean {
   }
 }
 
-/** Verify the cron secret sent by Vercel. */
 export function verifyCronSecret(req: IncomingMessage): boolean {
-  const secret = (req as { headers: Record<string, string | undefined> })
-    .headers['authorization'];
-  return secret === `Bearer ${process.env.VERCEL_CRON_SECRET}`;
+  const secret = (req as any).headers['authorization'];
+  return secret === `Bearer ${process.env.CRON_SECRET}`;
 }
