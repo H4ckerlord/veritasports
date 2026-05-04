@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useI18n } from '../App';
 
-const API = (import.meta as any).env?.VITE_API_BASE_URL ?? '';
-
 interface MarketRow {
   id: number;
   question: string;
@@ -31,26 +29,33 @@ export default function Admin() {
     () => sessionStorage.getItem('admin_token')
   );
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [logging, setLogging] = useState(false);
   const [status, setStatus] = useState<StatusResponse | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [loginError, setLoginError] = useState('');
 
   async function login() {
+    if (!password) return;
     setLogging(true);
+    setLoginError('');
     try {
-      const res = await fetch(`${API}/api/admin/login`, {
+      const res = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password }),
       });
-      if (!res.ok) throw new Error('Invalid password');
-      const json = await res.json() as { token: string };
-      setToken(json.token);
-      sessionStorage.setItem('admin_token', json.token);
+      const json = await res.json() as { token?: string; error?: string };
+      if (!res.ok) {
+        setLoginError(json.error ?? 'Invalid password');
+        return;
+      }
+      setToken(json.token!);
+      sessionStorage.setItem('admin_token', json.token!);
       setPassword('');
     } catch {
-      toast.error('Invalid password');
+      setLoginError('Cannot connect to server. Please try again.');
     } finally {
       setLogging(false);
     }
@@ -64,7 +69,7 @@ export default function Admin() {
   async function fetchStatus() {
     if (!token) return;
     try {
-      const res = await fetch(`${API}/api/admin/status`, {
+      const res = await fetch('/api/admin/status', {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.status === 401) { logout(); return; }
@@ -89,7 +94,7 @@ export default function Admin() {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const res = await fetch(`${API}/api/admin/schedule`, {
+      const res = await fetch('/api/admin/schedule', {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
@@ -117,20 +122,50 @@ export default function Admin() {
           {t('admin.title')}
         </h1>
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 space-y-4">
-          <input
-            type="password"
-            placeholder={t('admin.password')}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && login()}
-            className="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500"
-          />
+
+          {/* Password input with show/hide */}
+          <div className="relative">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              placeholder={t('admin.password')}
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setLoginError('');
+              }}
+              onKeyDown={(e) => e.key === 'Enter' && login()}
+              className="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 pr-12 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((s) => !s)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-lg select-none"
+            >
+              {showPassword ? '🙈' : '👁️'}
+            </button>
+          </div>
+
+          {/* Show the password in plain text so user can verify */}
+          {showPassword && password && (
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl px-4 py-3">
+              <p className="text-xs text-yellow-600 dark:text-yellow-400 mb-1">You are typing:</p>
+              <p className="font-mono text-sm text-yellow-800 dark:text-yellow-200 break-all">{password}</p>
+            </div>
+          )}
+
+          {/* Error message */}
+          {loginError && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3">
+              <p className="text-sm text-red-600 dark:text-red-400">{loginError}</p>
+            </div>
+          )}
+
           <button
             onClick={login}
             disabled={logging || !password}
             className="w-full bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white font-semibold py-3 rounded-xl transition"
           >
-            {logging ? t('common.loading') : t('admin.login')}
+            {logging ? 'Checking...' : t('admin.login')}
           </button>
         </div>
       </div>
