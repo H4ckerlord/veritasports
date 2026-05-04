@@ -1,6 +1,5 @@
 import { Pool } from 'pg';
 
-// Re-use the pool across hot-reloads in development
 let pool: Pool | undefined;
 
 export function getPool(): Pool {
@@ -17,12 +16,11 @@ export function getPool(): Pool {
   return pool;
 }
 
-/** Convenience wrapper – runs a single query and returns rows. */
-export async function query<T = Record<string, unknown>>(
+export async function query<T = any>(
   text: string,
   params?: unknown[]
 ): Promise<T[]> {
   const client = getPool();
-  const result = await client.query<T>(text, params);
-  return result.rows;
+  const result = await client.query(text, params);
+  return result.rows as T[];
 }

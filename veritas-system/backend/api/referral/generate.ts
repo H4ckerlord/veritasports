@@ -1,8 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { query } from '../db/client';
+import { query } from '../../db/client';
 import crypto from 'crypto';
 
-/** Generate or retrieve a referral code for a wallet. */
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
@@ -20,7 +19,6 @@ export default async function handler(
 
   const lower = wallet.toLowerCase();
 
-  // Return existing code if present
   const existing = await query<{ code: string }>(
     `SELECT code FROM referrals WHERE referrer_wallet = $1 LIMIT 1`,
     [lower]
@@ -31,8 +29,7 @@ export default async function handler(
     return;
   }
 
-  // Generate unique 8-char code
-  const code = crypto.randomBytes(4).toString('hex'); // e.g. "a3f7c12b"
+  const code = crypto.randomBytes(4).toString('hex');
 
   await query(
     `INSERT INTO referrals (code, referrer_wallet) VALUES ($1, $2)`,
