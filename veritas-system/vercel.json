@@ -68,15 +68,5 @@
       "src": "/(.*)",
       "dest": "frontend/dist/index.html"
     }
-  ],
-  "crons": [
-    {
-      "path": "/api/cron/publishMarkets",
-      "schedule": "0 * * * *"
-    },
-    {
-      "path": "/api/cron/processReferralRewards",
-      "schedule": "0 0 * * *"
-    }
   ]
 }
