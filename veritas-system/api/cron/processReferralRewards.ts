@@ -2,20 +2,19 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { verifyCronSecret } from '../../services/auth';
 import { query } from '../../db/client';
 
-/**
- * Daily cron: check for referred wallets that have made their first trade on
- * Azuro (via subgraph) and credit the referrer with a USDC reward.
- *
- * Note: actual bet detection uses Azuro's subgraph. We query for any `Bet`
- * events where the bettor matches a referred_wallet that hasn't been rewarded.
- */
-
-const REWARD_USDC = 1.0; // reward per successful referral
+const PLATFORM_FEE_PERCENT = 0.02;      // 2% platform fee
+const REFERRAL_SHARE_PERCENT = 0.30;    // referrer gets 30% of platform fee
 
 const BETS_QUERY = `
-  query FirstBets($wallets: [String!]!) {
-    bets(where: { bettor_in: $wallets }, orderBy: createdAt, first: 200) {
+  query RecentBets($wallets: [String!]!) {
+    bets(
+      where: { bettor_in: $wallets }
+      orderBy: createdAt
+      orderDirection: desc
+      first: 200
+    ) {
       bettor
+      amount
       createdAt
     }
   }
@@ -41,7 +40,7 @@ export default async function handler(
     return;
   }
 
-  // Get all referred wallets that haven't had a first trade credited yet
+  // Get all referred wallets that have not had first trade credited yet
   const pending = await query<{
     id: number;
     referred_wallet: string;
@@ -61,33 +60,48 @@ export default async function handler(
   const wallets = pending.map((r) => r.referred_wallet.toLowerCase());
 
   // Query Azuro subgraph for bets by these wallets
-  let bettors: Set<string>;
+  let bets: { bettor: string; amount: string }[];
   try {
     const url = await getSubgraphUrl();
-    const res2 = await fetch(url, {
+    const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query: BETS_QUERY, variables: { wallets } }),
     });
-    const json = (await res2.json()) as {
-      data?: { bets: { bettor: string }[] };
+    const json = (await response.json()) as {
+      data?: { bets: { bettor: string; amount: string }[] };
     };
-    bettors = new Set(
-      (json.data?.bets ?? []).map((b) => b.bettor.toLowerCase())
-    );
+    bets = json.data?.bets ?? [];
   } catch {
     res.status(500).json({ error: 'Subgraph query failed' });
     return;
   }
 
+  // Group bets by bettor to get total amount bet
+  const bettorAmounts: Record<string, number> = {};
+  for (const bet of bets) {
+    const addr = bet.bettor.toLowerCase();
+    const amt = parseFloat(bet.amount) || 0;
+    bettorAmounts[addr] = (bettorAmounts[addr] ?? 0) + amt;
+  }
+
   let credited = 0;
+
   for (const row of pending) {
-    if (bettors.has(row.referred_wallet.toLowerCase())) {
+    const wallet = row.referred_wallet.toLowerCase();
+    const totalBetAmount = bettorAmounts[wallet];
+
+    if (totalBetAmount && totalBetAmount > 0) {
+      // Calculate reward: 30% of 2% platform fee on their total bets
+      const platformFee = totalBetAmount * PLATFORM_FEE_PERCENT;
+      const referrerReward = platformFee * REFERRAL_SHARE_PERCENT;
+
       await query(
         `UPDATE referrals
-         SET first_trade_at = NOW(), reward_amount = $1
+         SET first_trade_at = NOW(),
+             reward_amount = $1
          WHERE id = $2`,
-        [REWARD_USDC, row.id]
+        [referrerReward.toFixed(6), row.id]
       );
       credited++;
     }
