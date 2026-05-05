@@ -32,12 +32,20 @@ export default function Home() {
         <p className="max-w-xl mx-auto text-lg text-gray-500 dark:text-gray-400">
           {t('hero.description')}
         </p>
+
+        {/* Buttons */}
         <div className="flex items-center justify-center gap-4 flex-wrap">
           <Link
             to="/markets"
             className="bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3 rounded-xl transition"
           >
             {t('hero.cta')} →
+          </Link>
+          <Link
+            to="/how-to-trade"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-3 rounded-xl transition"
+          >
+            📚 How to Trade
           </Link>
           <Link
             to="/how-it-works"
@@ -72,14 +80,42 @@ export default function Home() {
             ))}
           </div>
         ) : featured.length === 0 ? (
-          <p className="text-gray-400 text-center py-12">{t('markets.noMarkets')}</p>
+          <div className="text-center py-16 space-y-4">
+            <p className="text-gray-400">{t('markets.noMarkets')}</p>
+            <Link
+              to="/how-to-trade"
+              className="inline-block bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3 rounded-xl transition"
+            >
+              📚 Learn How to Trade While You Wait
+            </Link>
+          </div>
         ) : (
           <div className="grid sm:grid-cols-3 gap-4">
             {featured.map((m) => (
-              <MarketCard key={m.conditionId} market={m} onTrade={setTradingMarket} />
+              <MarketCard
+                key={m.conditionId}
+                market={m}
+                onTrade={setTradingMarket}
+              />
             ))}
           </div>
         )}
+      </section>
+
+      {/* How to trade banner */}
+      <section className="bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-2xl p-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="text-white space-y-1">
+          <p className="text-xl font-bold">New to prediction markets?</p>
+          <p className="opacity-90 text-sm">
+            We will show you exactly how to get started step by step — even if you have never used crypto before.
+          </p>
+        </div>
+        <Link
+          to="/how-to-trade"
+          className="shrink-0 bg-white text-emerald-600 hover:bg-emerald-50 font-bold px-6 py-3 rounded-xl transition whitespace-nowrap"
+        >
+          📚 How to Trade →
+        </Link>
       </section>
 
       {/* Stats bar */}

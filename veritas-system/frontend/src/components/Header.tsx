@@ -3,7 +3,6 @@ import { useI18n, useTheme } from '../App';
 import { useWallet } from '../hooks/useWallet';
 import { useState } from 'react';
 
-// All supported languages
 const LANGUAGES = [
   { code: 'en', label: 'English' },
   { code: 'es', label: 'Español' },
@@ -32,6 +31,7 @@ export default function Header({ wallet }: HeaderProps) {
 
   const navLinks = [
     { to: '/markets', label: t('nav.markets') },
+    { to: '/how-to-trade', label: '📚 How to Trade' },
     { to: '/how-it-works', label: t('nav.howItWorks') },
     { to: '/dashboard', label: t('nav.dashboard') },
   ];
@@ -40,12 +40,14 @@ export default function Header({ wallet }: HeaderProps) {
     ? `${wallet.address.slice(0, 6)}…${wallet.address.slice(-4)}`
     : null;
 
-  const currentLang = LANGUAGES.find((l) => l.code === lang) ?? LANGUAGES[0];
+  const currentLang =
+    LANGUAGES.find((l) => l.code === lang) ?? LANGUAGES[0];
 
   return (
     <header className="sticky top-0 z-30 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
+
           {/* Logo */}
           <Link
             to="/"
@@ -53,7 +55,16 @@ export default function Header({ wallet }: HeaderProps) {
           >
             <svg viewBox="0 0 32 32" className="w-8 h-8" fill="none">
               <circle cx="16" cy="16" r="16" fill="#6366f1" />
-              <text x="16" y="22" textAnchor="middle" fontSize="16" fontWeight="bold" fill="white">V</text>
+              <text
+                x="16"
+                y="22"
+                textAnchor="middle"
+                fontSize="16"
+                fontWeight="bold"
+                fill="white"
+              >
+                V
+              </text>
             </svg>
             Veritas
           </Link>
@@ -75,7 +86,7 @@ export default function Header({ wallet }: HeaderProps) {
             ))}
           </nav>
 
-          {/* Actions */}
+          {/* Right side actions */}
           <div className="flex items-center gap-2">
 
             {/* Language dropdown */}
@@ -118,7 +129,7 @@ export default function Header({ wallet }: HeaderProps) {
               {dark ? '☀️' : '🌙'}
             </button>
 
-            {/* Wallet */}
+            {/* Wallet button */}
             {wallet.address ? (
               <div className="flex items-center gap-2">
                 <span className="hidden sm:block text-xs font-mono bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 px-3 py-1.5 rounded-full">
@@ -143,7 +154,7 @@ export default function Header({ wallet }: HeaderProps) {
 
             {/* Mobile menu toggle */}
             <button
-              className="md:hidden p-2 rounded text-gray-500"
+              className="md:hidden p-2 rounded text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
               onClick={() => setMenuOpen((o) => !o)}
             >
               ☰
@@ -160,7 +171,11 @@ export default function Header({ wallet }: HeaderProps) {
               key={link.to}
               to={link.to}
               onClick={() => setMenuOpen(false)}
-              className="text-sm font-medium text-gray-700 dark:text-gray-300"
+              className={`text-sm font-medium transition-colors py-1 ${
+                location.pathname === link.to
+                  ? 'text-brand-600 dark:text-brand-400'
+                  : 'text-gray-700 dark:text-gray-300'
+              }`}
             >
               {link.label}
             </Link>

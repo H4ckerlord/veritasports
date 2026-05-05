@@ -7,6 +7,7 @@ import Markets from './pages/Markets';
 import MarketDetail from './pages/MarketDetail';
 import Dashboard from './pages/Dashboard';
 import HowItWorks from './pages/HowItWorks';
+import HowToTrade from './pages/HowToTrade';
 import Admin from './pages/Admin';
 import translations from './i18n/translations.json';
 
@@ -60,7 +61,6 @@ function getNestedValue(obj: Record<string, unknown>, path: string): string {
 export default function App() {
   const [lang, setLang] = useState<Lang>('en');
 
-  // Read saved theme from localStorage on first load
   const [dark, setDark] = useState<boolean>(() => {
     try {
       const saved = localStorage.getItem('theme');
@@ -72,7 +72,6 @@ export default function App() {
     }
   });
 
-  // Every time dark changes, update the HTML element class AND save to storage
   useEffect(() => {
     const root = document.documentElement;
     if (dark) {
@@ -108,6 +107,7 @@ export default function App() {
                 <Route path="markets/:id" element={<MarketDetail />} />
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="how-it-works" element={<HowItWorks />} />
+                <Route path="how-to-trade" element={<HowToTrade />} />
                 <Route path="admin" element={<Admin />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>
