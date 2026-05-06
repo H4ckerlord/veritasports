@@ -12,6 +12,11 @@ import HowToTrade from './pages/HowToTrade';
 import Admin from './pages/Admin';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfUse from './pages/TermsOfUse';
+import TermsOfService from './pages/TermsOfService';
+import ProhibitedMarkets from './pages/ProhibitedMarkets';
+import ResponsibleTrading from './pages/ResponsibleTrading';
+import ContactLegal from './pages/ContactLegal';
+import AuditTrail from './pages/AuditTrail';
 import translations from './i18n/translations.json';
 
 type Lang = 'en' | 'es';
@@ -128,6 +133,11 @@ export default function App() {
                 <Route path="how-to-trade" element={<HowToTrade />} />
                 <Route path="privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="terms-of-use" element={<TermsOfUse />} />
+                <Route path="terms-of-service" element={<TermsOfService />} />
+                <Route path="prohibited-markets" element={<ProhibitedMarkets />} />
+                <Route path="responsible-trading" element={<ResponsibleTrading />} />
+                <Route path="contact-legal" element={<ContactLegal />} />
+                <Route path="audit-trail" element={<AuditTrail />} />
                 <Route path="admin" element={<Admin />} />
               </Route>
               <Route path="*" element={<Navigate to="/" replace />} />
