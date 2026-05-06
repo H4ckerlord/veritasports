@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useState, createContext, useContext, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Layout from './components/Layout';
@@ -9,6 +9,8 @@ import Dashboard from './pages/Dashboard';
 import HowItWorks from './pages/HowItWorks';
 import HowToTrade from './pages/HowToTrade';
 import Admin from './pages/Admin';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfUse from './pages/TermsOfUse';
 import translations from './i18n/translations.json';
 
 type Lang = 'en' | 'es';
@@ -58,6 +60,18 @@ function getNestedValue(obj: Record<string, unknown>, path: string): string {
   }, obj) as string ?? path;
 }
 
+function PageTracker() {
+  const location = useLocation();
+  useEffect(() => {
+    fetch('/api/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ page: location.pathname }),
+    }).catch(() => {});
+  }, [location.pathname]);
+  return null;
+}
+
 export default function App() {
   const [lang, setLang] = useState<Lang>('en');
 
@@ -100,6 +114,7 @@ export default function App() {
       <I18nContext.Provider value={{ lang, setLang, t }}>
         <ThemeContext.Provider value={{ dark, toggleTheme }}>
           <BrowserRouter>
+            <PageTracker />
             <Routes>
               <Route path="/" element={<Layout />}>
                 <Route index element={<Home />} />
@@ -108,6 +123,8 @@ export default function App() {
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="how-it-works" element={<HowItWorks />} />
                 <Route path="how-to-trade" element={<HowToTrade />} />
+                <Route path="privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="terms-of-use" element={<TermsOfUse />} />
                 <Route path="admin" element={<Admin />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>
