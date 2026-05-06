@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { useState, createContext, useContext, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Layout from './components/Layout';
@@ -52,12 +53,14 @@ const queryClient = new QueryClient({
 });
 
 function getNestedValue(obj: Record<string, unknown>, path: string): string {
-  return path.split('.').reduce<unknown>((current, key) => {
-    if (current && typeof current === 'object') {
-      return (current as Record<string, unknown>)[key];
-    }
-    return undefined;
-  }, obj) as string ?? path;
+  return (
+    (path.split('.').reduce<unknown>((current, key) => {
+      if (current && typeof current === 'object') {
+        return (current as Record<string, unknown>)[key];
+      }
+      return undefined;
+    }, obj) as string) ?? path
+  );
 }
 
 function PageTracker() {
@@ -126,8 +129,8 @@ export default function App() {
                 <Route path="privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="terms-of-use" element={<TermsOfUse />} />
                 <Route path="admin" element={<Admin />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
               </Route>
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </BrowserRouter>
         </ThemeContext.Provider>
