@@ -17,13 +17,6 @@ interface StatusResponse {
   recent: MarketRow[];
 }
 
-interface AnalyticsData {
-  visitors: { today: number; week: number; month: number; year: number };
-  markets: { total: number; pending: number; published: number };
-  referrals: { total: number; pendingRewards: number };
-  dailyVisits: { day: string; count: number }[];
-}
-
 const STATUS_COLORS: { [k: string]: string } = {
   pending: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
   published: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
@@ -38,10 +31,8 @@ export default function Admin() {
   const [logging, setLogging] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [status, setStatus] = useState<StatusResponse | null>(null);
-  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [deleting, setDeleting] = useState<number | null>(null);
 
   async function login() {
     if (!password) return;
@@ -54,7 +45,10 @@ export default function Admin() {
         body: JSON.stringify({ password }),
       });
       const json = await res.json() as { token?: string; error?: string };
-      if (!res.ok) { setLoginError(json.error ?? 'Invalid password'); return; }
+      if (!res.ok) {
+        setLoginError(json.error ?? 'Invalid password');
+        return;
+      }
       setToken(json.token!);
       sessionStorage.setItem('admin_token', json.token!);
       setPassword('');
@@ -73,25 +67,18 @@ export default function Admin() {
   async function fetchStatus() {
     if (!token) return;
     try {
-      const res = await fetch('/api/admin/status', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch('/api/admin/status', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (res.status === 401) { logout(); return; }
       setStatus(await res.json() as StatusResponse);
-    } catch { /* silent */ }
-  }
-
-  async function fetchAnalytics() {
-    if (!token) return;
-    try {
-      const res = await fetch('/api/admin/analytics', { headers: { Authorization: `Bearer ${token}` } });
-      if (res.ok) setAnalytics(await res.json() as AnalyticsData);
     } catch { /* silent */ }
   }
 
   useEffect(() => {
     if (token) {
       fetchStatus();
-      fetchAnalytics();
-      const interval = setInterval(() => { fetchStatus(); fetchAnalytics(); }, 30_000);
+      const interval = setInterval(fetchStatus, 30_000);
       return () => clearInterval(interval);
     }
   }, [token]);
@@ -102,34 +89,33 @@ export default function Admin() {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const res = await fetch('/api/admin/schedule', { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: formData });
+      const res = await fetch('/api/admin/schedule', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
       const json = await res.json() as { inserted?: number; errors?: string[]; error?: string };
-      if (!res.ok) { toast.error(json.error ?? 'Upload failed'); }
-      else {
+      if (!res.ok) {
+        toast.error(json.error ?? 'Upload failed');
+      } else {
         toast.success(`Scheduled ${json.inserted} market(s)`);
         if (json.errors?.length) toast.error(`${json.errors.length} row(s) had errors`);
         setFile(null);
         fetchStatus();
       }
-    } catch { toast.error('Upload failed'); }
-    finally { setUploading(false); }
-  }
-
-  async function deleteMarket(id: number) {
-    if (!token) return;
-    setDeleting(id);
-    try {
-      const res = await fetch(`/api/admin/deleteMarket?id=${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
-      if (res.ok) { toast.success('Market deleted'); fetchStatus(); }
-      else toast.error('Could not delete this market');
-    } catch { toast.error('Delete failed'); }
-    finally { setDeleting(null); }
+    } catch {
+      toast.error('Upload failed');
+    } finally {
+      setUploading(false);
+    }
   }
 
   if (!token) {
     return (
       <div className="max-w-sm mx-auto pt-24 space-y-4">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-center">{t('admin.title')}</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-center">
+          {t('admin.title')}
+        </h1>
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 space-y-4">
           <div className="relative">
             <input
@@ -140,7 +126,11 @@ export default function Admin() {
               onKeyDown={(e) => e.key === 'Enter' && login()}
               className="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 pr-12 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
-            <button type="button" onClick={() => setShowPassword((s) => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-lg">
+            <button
+              type="button"
+              onClick={() => setShowPassword((s) => !s)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-lg"
+            >
               {showPassword ? '🙈' : '👁️'}
             </button>
           </div>
@@ -155,7 +145,11 @@ export default function Admin() {
               <p className="text-sm text-red-600 dark:text-red-400">{loginError}</p>
             </div>
           )}
-          <button onClick={login} disabled={logging || !password} className="w-full bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white font-semibold py-3 rounded-xl transition">
+          <button
+            onClick={login}
+            disabled={logging || !password}
+            className="w-full bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white font-semibold py-3 rounded-xl transition"
+          >
             {logging ? 'Checking...' : t('admin.login')}
           </button>
         </div>
@@ -164,111 +158,65 @@ export default function Admin() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('admin.title')}</h1>
-        <button onClick={logout} className="text-sm text-gray-500 hover:text-red-500 transition">{t('admin.logout')}</button>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+          {t('admin.title')}
+        </h1>
+        <button
+          onClick={logout}
+          className="text-sm text-gray-500 hover:text-red-500 transition"
+        >
+          {t('admin.logout')}
+        </button>
       </div>
 
-      {/* Analytics Section */}
-      {analytics && (
-        <div className="space-y-4">
-          <h2 className="font-bold text-gray-900 dark:text-gray-100 text-lg">Analytics</h2>
-
-          {/* Visitor Stats */}
-          <div>
-            <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Visitors</p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {[
-                { label: 'Today', value: analytics.visitors.today },
-                { label: 'This Week', value: analytics.visitors.week },
-                { label: 'This Month', value: analytics.visitors.month },
-                { label: 'This Year', value: analytics.visitors.year },
-              ].map((s) => (
-                <div key={s.label} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-4 text-center">
-                  <p className="text-2xl font-bold text-brand-600 dark:text-brand-400">{s.value.toLocaleString()}</p>
-                  <p className="text-xs text-gray-400 mt-1">{s.label}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Daily chart - simple bar */}
-          {analytics.dailyVisits.length > 0 && (
-            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
-              <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Daily Visits (Last 7 Days)</p>
-              <div className="flex items-end gap-2 h-24">
-                {analytics.dailyVisits.map((d) => {
-                  const max = Math.max(...analytics.dailyVisits.map((x) => Number(x.count)), 1);
-                  const height = Math.max((Number(d.count) / max) * 100, 4);
-                  return (
-                    <div key={d.day} className="flex-1 flex flex-col items-center gap-1">
-                      <span className="text-xs text-gray-400">{d.count}</span>
-                      <div className="w-full bg-brand-500 rounded-t" style={{ height: `${height}%` }} />
-                      <span className="text-xs text-gray-400 truncate w-full text-center">
-                        {new Date(d.day).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Markets and Referrals */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {[
-              { label: 'Total Markets', value: analytics.markets.total, color: 'text-gray-700 dark:text-gray-300' },
-              { label: 'Published Markets', value: analytics.markets.published, color: 'text-emerald-600 dark:text-emerald-400' },
-              { label: 'Pending Markets', value: analytics.markets.pending, color: 'text-yellow-600 dark:text-yellow-400' },
-              { label: 'Total Referrals', value: analytics.referrals.total, color: 'text-brand-600 dark:text-brand-400' },
-              { label: 'Pending Rewards', value: analytics.referrals.pendingRewards, color: 'text-orange-600 dark:text-orange-400' },
-            ].map((s) => (
-              <div key={s.label} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-4 text-center">
-                <p className={`text-2xl font-bold ${s.color}`}>{s.value.toLocaleString()}</p>
-                <p className="text-xs text-gray-400 mt-1">{s.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Market status counts */}
       {status && (
-        <div>
-          <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Market Status</p>
-          <div className="grid grid-cols-3 gap-4">
-            {(['pending', 'published', 'failed'] as const).map((key) => (
-              <div key={key} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5 text-center">
-                <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{status.counts[key]}</p>
-                <p className="text-xs text-gray-400 capitalize mt-1">{t(`admin.${key}`)}</p>
-              </div>
-            ))}
-          </div>
+        <div className="grid grid-cols-3 gap-4">
+          {(['pending', 'published', 'failed'] as const).map((key) => (
+            <div key={key} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5 text-center">
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                {status.counts[key]}
+              </p>
+              <p className="text-xs text-gray-400 capitalize mt-1">{t(`admin.${key}`)}</p>
+            </div>
+          ))}
         </div>
       )}
 
-      {/* CSV Upload */}
       <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 space-y-4">
         <h2 className="font-semibold text-gray-900 dark:text-gray-100">{t('admin.uploadCsv')}</h2>
-        <p className="text-xs text-gray-400">CSV columns: <code>question, end_time_utc, publish_time_utc</code></p>
+        <p className="text-xs text-gray-400">
+          CSV columns: <code>question, end_time_utc, publish_time_utc</code>
+        </p>
         <div className="flex gap-3 items-start flex-wrap">
           <label className="flex-1">
-            <input type="file" accept=".csv,text/csv" onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-brand-50 file:text-brand-700 cursor-pointer" />
+            <input
+              type="file"
+              accept=".csv,text/csv"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-brand-50 file:text-brand-700 cursor-pointer"
+            />
           </label>
-          <button onClick={uploadCsv} disabled={!file || uploading}
-            className="bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-sm font-medium px-5 py-2.5 rounded-xl transition">
+          <button
+            onClick={uploadCsv}
+            disabled={!file || uploading}
+            className="bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white text-sm font-medium px-5 py-2.5 rounded-xl transition"
+          >
             {uploading ? t('common.loading') : t('admin.upload')}
           </button>
         </div>
       </div>
 
-      {/* Markets Table */}
       <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
         <div className="p-5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
-          <h2 className="font-semibold text-gray-900 dark:text-gray-100">{t('admin.scheduledMarkets')}</h2>
-          <button onClick={() => { fetchStatus(); fetchAnalytics(); }} className="text-xs text-gray-400 hover:text-brand-500 transition">
+          <h2 className="font-semibold text-gray-900 dark:text-gray-100">
+            {t('admin.scheduledMarkets')}
+          </h2>
+          <button
+            onClick={fetchStatus}
+            className="text-xs text-gray-400 hover:text-brand-500 transition"
+          >
             Refresh
           </button>
         </div>
@@ -285,7 +233,6 @@ export default function Admin() {
                   <th className="text-left px-4 py-3 font-medium whitespace-nowrap">End Time</th>
                   <th className="text-left px-4 py-3 font-medium">Status</th>
                   <th className="text-left px-4 py-3 font-medium">Azuro ID</th>
-                  <th className="text-left px-4 py-3 font-medium">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -293,27 +240,26 @@ export default function Admin() {
                   <tr key={row.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                     <td className="px-4 py-3 text-gray-400">{row.id}</td>
                     <td className="px-4 py-3 max-w-xs">
-                      <p className="truncate text-gray-700 dark:text-gray-300" title={row.question}>{row.question}</p>
-                      {row.error_message && <p className="text-red-500 truncate">{row.error_message}</p>}
+                      <p className="truncate text-gray-700 dark:text-gray-300" title={row.question}>
+                        {row.question}
+                      </p>
+                      {row.error_message && (
+                        <p className="text-red-500 truncate">{row.error_message}</p>
+                      )}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-gray-400">{new Date(row.publish_time).toLocaleString()}</td>
-                    <td className="px-4 py-3 whitespace-nowrap text-gray-400">{new Date(row.end_time).toLocaleString()}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-gray-400">
+                      {new Date(row.publish_time).toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-gray-400">
+                      {new Date(row.end_time).toLocaleString()}
+                    </td>
                     <td className="px-4 py-3">
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[row.status] ?? ''}`}>
                         {row.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 font-mono text-gray-400 max-w-[100px] truncate">{row.azuro_market_id ?? '—'}</td>
-                    <td className="px-4 py-3">
-                      {row.status === 'pending' && (
-                        <button
-                          onClick={() => deleteMarket(row.id)}
-                          disabled={deleting === row.id}
-                          className="text-red-500 hover:text-red-700 text-xs font-medium disabled:opacity-50"
-                        >
-                          {deleting === row.id ? '...' : 'Delete'}
-                        </button>
-                      )}
+                    <td className="px-4 py-3 font-mono text-gray-400 max-w-[100px] truncate">
+                      {row.azuro_market_id ?? '—'}
                     </td>
                   </tr>
                 ))}
