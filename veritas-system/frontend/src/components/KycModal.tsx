@@ -162,7 +162,7 @@ export default function KycModal({ wallet }: KycModalProps) {
 
         <div className="p-6 pt-0 space-y-3">
           {sessionUrl ? (
-            
+            <a
               href={sessionUrl}
               target="_blank"
               rel="noopener noreferrer"
