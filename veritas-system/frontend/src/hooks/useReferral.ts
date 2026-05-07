@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 
-const API = (import.meta as any).env?.VITE_API_BASE_URL ?? '';
-
 export interface ReferralData {
   referralCode: string | null;
+  referralLink: string | null;
   pendingUsdc: string;
   claimedUsdc: string;
   referrals: {
@@ -27,12 +26,12 @@ export function useReferral(wallet: string | null) {
     }
   }, [wallet]);
 
-  async function applyReferralCode(code: string, wallet: string) {
+  async function applyReferralCode(code: string, walletAddr: string) {
     try {
-      await fetch(`${API}/api/referral/register`, {
+      await fetch('/api/referral/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, wallet }),
+        body: JSON.stringify({ code, wallet: walletAddr }),
       });
       const url = new URL(window.location.href);
       url.searchParams.delete('ref');
@@ -42,15 +41,28 @@ export function useReferral(wallet: string | null) {
     }
   }
 
-  async function fetchReferralData(wallet: string) {
+  async function fetchReferralData(walletAddr: string) {
     setLoading(true);
     try {
       const res = await fetch(
-        `${API}/api/referral/rewards?wallet=${encodeURIComponent(wallet)}`
+        `/api/referral/rewards?wallet=${encodeURIComponent(walletAddr)}`
       );
       if (!res.ok) throw new Error('Failed');
-      const json = await res.json() as ReferralData;
-      setData(json);
+      const json = await res.json() as {
+        referralCode: string | null;
+        pendingUsdc: string;
+        claimedUsdc: string;
+        referrals: ReferralData['referrals'];
+      };
+      setData({
+        referralCode: json.referralCode,
+        referralLink: json.referralCode
+          ? `https://veritass-alpha.vercel.app?ref=${encodeURIComponent(json.referralCode)}`
+          : null,
+        pendingUsdc: json.pendingUsdc,
+        claimedUsdc: json.claimedUsdc,
+        referrals: json.referrals,
+      });
     } catch {
       // silent
     } finally {
@@ -58,35 +70,37 @@ export function useReferral(wallet: string | null) {
     }
   }
 
-  async function generateCode(wallet: string): Promise<string | null> {
+  async function generateCode(walletAddr: string): Promise<string | null> {
     try {
-      const res = await fetch(`${API}/api/referral/generate`, {
+      const res = await fetch('/api/referral/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wallet }),
+        body: JSON.stringify({ wallet: walletAddr }),
       });
-      if (!res.ok) throw new Error('Failed');
-      const json = await res.json() as { code: string };
-      await fetchReferralData(wallet);
+      if (!res.ok) {
+        const err = await res.json() as { error?: string };
+        toast.error(err.error ?? 'Failed to generate referral code');
+        return null;
+      }
+      const json = await res.json() as { code: string; link: string };
+      await fetchReferralData(walletAddr);
       return json.code;
     } catch {
-      toast.error('Failed to generate referral code');
+      toast.error('Failed to generate referral code. Please try again.');
       return null;
     }
   }
 
-  async function claimRewards(wallet: string): Promise<void> {
+  async function claimRewards(walletAddr: string): Promise<void> {
     try {
-      const res = await fetch(`${API}/api/referral/claim`, {
+      const res = await fetch('/api/referral/claim', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wallet }),
+        body: JSON.stringify({ wallet: walletAddr }),
       });
       const json = await res.json() as { message: string; amount?: string };
-      toast.success(
-        `${json.message}${json.amount ? ` – ${json.amount} USDC` : ''}`
-      );
-      await fetchReferralData(wallet);
+      toast.success(`${json.message}${json.amount ? ` - ${json.amount} USDC` : ''}`);
+      await fetchReferralData(walletAddr);
     } catch {
       toast.error('Claim failed. Try again later.');
     }
@@ -97,10 +111,7 @@ export function useReferral(wallet: string | null) {
     else setData(null);
   }, [wallet]);
 
-  const referralLink =
-    data?.referralCode
-      ? `${window.location.origin}?ref=${data.referralCode}`
-      : null;
+  const referralLink = data?.referralLink ?? null;
 
   return { data, loading, referralLink, generateCode, claimRewards };
 }

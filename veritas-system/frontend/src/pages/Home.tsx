@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useI18n } from '../App';
 import { useAzuroMarkets } from '../hooks/useAzuroMarkets';
 import MarketCard from '../components/MarketCard';
+import LiveBetFeed from '../components/LiveBetFeed';
 import TradeModal from '../components/TradeModal';
 import { useState } from 'react';
 import type { AzuroMarket } from '../hooks/useAzuroMarkets';
@@ -117,6 +118,20 @@ export default function Home() {
           📚 How to Trade →
         </Link>
       </section>
+
+{/* Live bet feed */}
+<section>
+  <div className="flex items-center justify-between mb-4">
+    <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+      Live Activity
+    </h2>
+    <span className="flex items-center gap-1.5 text-xs text-emerald-500 font-medium">
+      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+      Live
+    </span>
+  </div>
+  <LiveBetFeed />
+</section>
 
       {/* Stats bar */}
       <section className="grid grid-cols-3 gap-6 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-8 text-center">

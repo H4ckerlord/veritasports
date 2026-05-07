@@ -12,6 +12,7 @@
     { "source": "/api/referral/generate", "destination": "/api/referral/generate.ts" },
     { "source": "/api/feedback", "destination": "/api/feedback.ts" },
     { "source": "/api/markets", "destination": "/api/markets.ts" },
+    { "source": "/api/kyc", "destination": "/api/kyc.ts" },
     { "source": "/api/cron/publishMarkets", "destination": "/api/cron/publishMarkets.ts" },
     { "source": "/api/cron/processReferralRewards", "destination": "/api/cron/processReferralRewards.ts" },
     { "source": "/(.*)", "destination": "/index.html" }

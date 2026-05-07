@@ -18,10 +18,18 @@ interface Analytics {
   dailyVisits: { day: string; count: number }[];
 }
 
+interface Volume {
+  today: number;
+  week: number;
+  month: number;
+  year: number;
+}
+
 interface StatusResponse {
   counts: { pending: number; published: number; failed: number };
   recent: MarketRow[];
   analytics: Analytics | null;
+  volume: Volume | null;
 }
 
 const STATUS_COLORS: { [k: string]: string } = {
@@ -29,6 +37,12 @@ const STATUS_COLORS: { [k: string]: string } = {
   published: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
   failed: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
 };
+
+function formatUsdc(val: number): string {
+  if (val >= 1_000_000) return `$${(val / 1_000_000).toFixed(2)}M`;
+  if (val >= 1_000) return `$${(val / 1_000).toFixed(2)}K`;
+  return `$${val.toFixed(2)}`;
+}
 
 export default function Admin() {
   const { t } = useI18n();
@@ -100,24 +114,20 @@ export default function Admin() {
         body: formData,
       });
       const json = await res.json() as { inserted?: number; errors?: string[]; error?: string };
-      if (!res.ok) {
-        toast.error(json.error ?? 'Upload failed');
-      } else {
+      if (!res.ok) { toast.error(json.error ?? 'Upload failed'); }
+      else {
         toast.success(`Scheduled ${json.inserted} market(s)`);
         if (json.errors?.length) toast.error(`${json.errors.length} row(s) had errors`);
         setFile(null);
         fetchStatus();
       }
-    } catch {
-      toast.error('Upload failed');
-    } finally {
-      setUploading(false);
-    }
+    } catch { toast.error('Upload failed'); }
+    finally { setUploading(false); }
   }
 
   async function deleteMarket(id: number) {
     if (!token) return;
-    if (!window.confirm('Delete this pending market?')) return;
+    if (!window.confirm('Delete this pending market? This cannot be undone.')) return;
     setDeleting(id);
     try {
       const res = await fetch(`/api/admin/status?id=${id}`, {
@@ -125,12 +135,9 @@ export default function Admin() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) { toast.success('Market deleted'); fetchStatus(); }
-      else toast.error('Could not delete this market');
-    } catch {
-      toast.error('Delete failed');
-    } finally {
-      setDeleting(null);
-    }
+      else toast.error('Could not delete — only pending markets can be deleted');
+    } catch { toast.error('Delete failed'); }
+    finally { setDeleting(null); }
   }
 
   if (!token) {
@@ -171,23 +178,48 @@ export default function Admin() {
   }
 
   const analytics = status?.analytics;
+  const volume = status?.volume;
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('admin.title')}</h1>
-        <button onClick={logout} className="text-sm text-gray-500 hover:text-red-500 transition">{t('admin.logout')}</button>
+        <div className="flex items-center gap-3">
+          <button onClick={fetchStatus} className="text-xs text-gray-400 hover:text-brand-500 transition">Refresh</button>
+          <button onClick={logout} className="text-sm text-gray-500 hover:text-red-500 transition">{t('admin.logout')}</button>
+        </div>
       </div>
 
+      {/* Trading Volume */}
+      {volume && (
+        <div className="space-y-3">
+          <h2 className="font-bold text-gray-900 dark:text-gray-100">Trading Volume (Azuro)</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[
+              { label: 'Today', value: formatUsdc(volume.today) },
+              { label: 'This Week', value: formatUsdc(volume.week) },
+              { label: 'This Month', value: formatUsdc(volume.month) },
+              { label: 'This Year', value: formatUsdc(volume.year) },
+            ].map((s) => (
+              <div key={s.label} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-4 text-center">
+                <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{s.value}</p>
+                <p className="text-xs text-gray-400 mt-1">{s.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Visitor Analytics */}
       {analytics && (
-        <div className="space-y-4">
-          <h2 className="font-bold text-gray-900 dark:text-gray-100">Analytics</h2>
+        <div className="space-y-3">
+          <h2 className="font-bold text-gray-900 dark:text-gray-100">Visitor Analytics</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
               { label: 'Visitors Today', value: analytics.visitors.today },
-              { label: 'Visitors This Week', value: analytics.visitors.week },
-              { label: 'Visitors This Month', value: analytics.visitors.month },
-              { label: 'Visitors This Year', value: analytics.visitors.year },
+              { label: 'This Week', value: analytics.visitors.week },
+              { label: 'This Month', value: analytics.visitors.month },
+              { label: 'This Year', value: analytics.visitors.year },
             ].map((s) => (
               <div key={s.label} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-4 text-center">
                 <p className="text-2xl font-bold text-brand-600 dark:text-brand-400">{s.value}</p>
@@ -195,7 +227,6 @@ export default function Admin() {
               </div>
             ))}
           </div>
-
           {analytics.dailyVisits.length > 0 && (
             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
               <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Daily Visits - Last 7 Days</p>
@@ -216,7 +247,6 @@ export default function Admin() {
               </div>
             </div>
           )}
-
           <div className="grid grid-cols-2 gap-3">
             {[
               { label: 'Total Referrals', value: analytics.referrals.total, color: 'text-brand-600 dark:text-brand-400' },
@@ -231,25 +261,22 @@ export default function Admin() {
         </div>
       )}
 
-      {!analytics && status && (
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4">
-          <p className="text-sm text-yellow-700 dark:text-yellow-400">
-            Analytics not available yet. Run the SQL in Neon to create the page_visits table.
-          </p>
-        </div>
-      )}
-
+      {/* Market Counts */}
       {status && (
-        <div className="grid grid-cols-3 gap-4">
-          {(['pending', 'published', 'failed'] as const).map((key) => (
-            <div key={key} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5 text-center">
-              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{status.counts[key]}</p>
-              <p className="text-xs text-gray-400 capitalize mt-1">{t(`admin.${key}`)}</p>
-            </div>
-          ))}
+        <div>
+          <h2 className="font-bold text-gray-900 dark:text-gray-100 mb-3">Market Status</h2>
+          <div className="grid grid-cols-3 gap-4">
+            {(['pending', 'published', 'failed'] as const).map((key) => (
+              <div key={key} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5 text-center">
+                <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{status.counts[key]}</p>
+                <p className="text-xs text-gray-400 capitalize mt-1">{t(`admin.${key}`)}</p>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
+      {/* CSV Upload */}
       <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 space-y-4">
         <h2 className="font-semibold text-gray-900 dark:text-gray-100">{t('admin.uploadCsv')}</h2>
         <p className="text-xs text-gray-400">CSV columns: <code>question, end_time_utc, publish_time_utc</code></p>
@@ -265,10 +292,10 @@ export default function Admin() {
         </div>
       </div>
 
+      {/* Markets Table */}
       <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
-        <div className="p-5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+        <div className="p-5 border-b border-gray-100 dark:border-gray-800">
           <h2 className="font-semibold text-gray-900 dark:text-gray-100">{t('admin.scheduledMarkets')}</h2>
-          <button onClick={fetchStatus} className="text-xs text-gray-400 hover:text-brand-500 transition">Refresh</button>
         </div>
         {!status?.recent.length ? (
           <p className="p-6 text-sm text-gray-400">No scheduled markets yet.</p>
