@@ -193,13 +193,14 @@ export default function Admin() {
       {/* Trading Volume */}
       {volume && (
         <div className="space-y-3">
-          <h2 className="font-bold text-gray-900 dark:text-gray-100">Trading Volume (Azuro)</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <h2 className="font-bold text-gray-900 dark:text-gray-100">Platform Trading Volume</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
             {[
               { label: 'Today', value: formatUsdc(volume.today) },
               { label: 'This Week', value: formatUsdc(volume.week) },
               { label: 'This Month', value: formatUsdc(volume.month) },
               { label: 'This Year', value: formatUsdc(volume.year) },
+              { label: 'All Time', value: formatUsdc((volume as any).allTime ?? 0) },
             ].map((s) => (
               <div key={s.label} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-4 text-center">
                 <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{s.value}</p>

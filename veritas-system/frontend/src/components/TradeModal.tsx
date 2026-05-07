@@ -100,7 +100,24 @@ export default function TradeModal({ market, wallet, onClose }: TradeModalProps)
       );
       await betTx.wait();
 
-      toast.success(t('trade.success'));
+     toast.success(t('trade.success'));
+
+      // Record trade in our platform database
+      try {
+        await fetch('/api/kyc?action=record_trade', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            wallet: owner,
+            amount: amountNum,
+            marketId: market.conditionId,
+            outcome: outcomeIndex === 0 ? 'YES' : 'NO',
+          }),
+        });
+      } catch {
+        // Silent - trade recording is non-critical
+      }
+
       onClose();
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';

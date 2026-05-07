@@ -5,14 +5,16 @@ export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ): Promise<void> {
-  if (req.method !== 'POST') {
-    res.status(405).json({ error: 'Method not allowed' });
-    return;
-  }
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') { res.status(200).end(); return; }
+  if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
 
-  const { message, wallet } = req.body as {
+  const { message, wallet, contactMethod } = req.body as {
     message?: string;
     wallet?: string | null;
+    contactMethod?: string | null;
   };
 
   if (!message || message.trim().length === 0) {
@@ -21,15 +23,20 @@ export default async function handler(
   }
 
   if (message.length > 1000) {
-    res.status(400).json({ error: 'Message too long (max 1000 characters)' });
+    res.status(400).json({ error: 'Message too long' });
     return;
   }
 
-  // Validate wallet if provided
-  const safeWallet =
-    wallet && /^0x[0-9a-fA-F]{40}$/.test(wallet) ? wallet : null;
+  const safeWallet = wallet && /^0x[0-9a-fA-F]{40}$/.test(wallet) ? wallet : null;
+  const safeContact = contactMethod && contactMethod.trim().length > 0
+    ? contactMethod.trim().substring(0, 100)
+    : null;
 
-  await telegram.feedback(safeWallet, message.trim());
+  let fullMessage = message.trim();
+  if (safeContact) {
+    fullMessage += `\n\nReply to: ${safeContact}`;
+  }
 
+  await telegram.feedback(safeWallet, fullMessage);
   res.status(200).json({ message: 'Feedback received. Thank you!' });
 }

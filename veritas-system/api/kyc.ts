@@ -207,9 +207,75 @@ async function handleDiditWebhook(req: VercelRequest): Promise<{ success: boolea
   return { success: true };
 }
 
-async function screenWithMisttrack(wallet: string): Promise<{ passed: boolean; score: number; details: string }> {
-  const apiKey = process.env.MISTTRACK_API_KEY;
-  if (!apiKey) throw new Error('MistTrack API key not configured');
+async function screenWithWalletScreener(wallet: string): Promise<{ passed: boolean; score: number; details: string }> {
+  const apiKey = process.env.WALLETSCREENER_API_KEY;
+  if (!apiKey) throw new Error('WalletScreener API key not configured');
+
+  const res = await fetch(`https://api.walletscreener.io/v1/screen`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-API-Key': apiKey,
+    },
+    body: JSON.stringify({
+      address: wallet,
+      chain: 'polygon',
+    }),
+  });
+
+  if (!res.ok) throw new Error(`WalletScreener API error: ${res.status}`);
+
+  const data = await res.json() as {
+    risk_score: number;
+    risk_level: string;
+    flags: string[];
+    sanctioned: boolean;
+    is_mixer: boolean;
+    is_darknet: boolean;
+  };
+
+  const score = data.risk_score ?? 0;
+  const flags: string[] = data.flags ?? [];
+
+  if (data.sanctioned) flags.push('SANCTIONED');
+  if (data.is_mixer) flags.push('MIXER');
+  if (data.is_darknet) flags.push('DARKNET');
+
+  const details = flags.length > 0 ? flags.join(', ') : 'CLEAN';
+  const passed = score < 70 && !data.sanctioned && !data.is_darknet;
+
+  await query(
+    `UPDATE user_kyc
+     SET misttrack_score = $1, misttrack_screened_at = NOW(), updated_at = NOW()
+     WHERE wallet_address = $2`,
+    [score, wallet.toLowerCase()]
+  );
+
+  if (passed) {
+    await query(
+      `UPDATE user_kyc SET tier = 3, kyc_status = 'tier3_passed', updated_at = NOW() WHERE wallet_address = $1`,
+      [wallet.toLowerCase()]
+    );
+    await logAudit(wallet, 'TIER3_PASSED', `Score: ${score}`);
+  } else {
+    await query(
+      `UPDATE user_kyc
+       SET kyc_status = 'tier3_failed', is_frozen = TRUE, freeze_reason = $1, updated_at = NOW()
+       WHERE wallet_address = $2`,
+      [`AML flags: ${details}`, wallet.toLowerCase()]
+    );
+    await logAudit(wallet, 'TIER3_FAILED', `Score: ${score}, Flags: ${details}`);
+  }
+
+  const encData = encryptData({ score, riskLevel: data.risk_level, flags, screenedAt: new Date().toISOString() });
+  await query(
+    `INSERT INTO kyc_data (wallet_address, encrypted_data, iv, auth_tag, data_type)
+     VALUES ($1, $2, $3, $4, 'tier3_aml')`,
+    [wallet.toLowerCase(), encData.encrypted, encData.iv, encData.authTag]
+  );
+
+  return { passed, score, details };
+}
 
   const res = await fetch('https://openapi.misttrack.io/v1/risk_score', {
     method: 'POST',
@@ -394,7 +460,7 @@ export default async function handler(
         res.status(400).json({ error: 'Valid wallet address required' });
         return;
       }
-      const result = await screenWithMisttrack(wallet);
+      const result = await screenWithWalletScreener(wallet);
       res.status(200).json(result);
       return;
     }
@@ -412,6 +478,31 @@ export default async function handler(
       }
       const result = await updateVolume(wallet, amount);
       res.status(200).json(result);
+      return;
+    }
+    
+    // POST /api/kyc?action=record_trade — record a platform trade
+    if (action === 'record_trade') {
+      const { wallet, amount, marketId, outcome } = req.body as {
+        wallet?: string;
+        amount?: number;
+        marketId?: string;
+        outcome?: string;
+      };
+      if (!wallet || !amount || amount <= 0) {
+        res.status(400).json({ error: 'wallet and amount required' });
+        return;
+      }
+      try {
+        await query(
+          'INSERT INTO platform_trades (wallet_address, amount, market_id, outcome) VALUES ($1, $2, $3, $4)',
+          [wallet.toLowerCase(), amount, marketId ?? null, outcome ?? null]
+        );
+        const volumeResult = await updateVolume(wallet, amount);
+        res.status(200).json({ recorded: true, ...volumeResult });
+      } catch {
+        res.status(500).json({ error: 'Failed to record trade' });
+      }
       return;
     }
 

@@ -2,66 +2,6 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { verifyAdminToken } from '../../services/auth';
 import { query } from '../../db/client';
 
-async function fetchTradingVolume(): Promise<{
-  today: number; week: number; month: number; year: number;
-}> {
-  try {
-    const raw = process.env.AZURO_CONFIG;
-    if (!raw) return { today: 0, week: 0, month: 0, year: 0 };
-    const cfg = JSON.parse(raw) as { chainId: number };
-    const subgraphUrl = cfg.chainId === 137
-      ? 'https://api.thegraph.com/subgraphs/name/azuro-protocol/azuro-polygon-mainnet'
-      : 'https://api.thegraph.com/subgraphs/name/azuro-protocol/azuro-polygon-amoy-testnet';
-
-    const now = Math.floor(Date.now() / 1000);
-    const dayAgo = now - 86400;
-    const weekAgo = now - 604800;
-    const monthAgo = now - 2592000;
-    const yearAgo = now - 31536000;
-
-    const VOLUME_QUERY = `
-      query Volumes($dayAgo: Int!, $weekAgo: Int!, $monthAgo: Int!, $yearAgo: Int!) {
-        day: bets(where: { createdAt_gte: $dayAgo }) { amount }
-        week: bets(where: { createdAt_gte: $weekAgo }) { amount }
-        month: bets(where: { createdAt_gte: $monthAgo }) { amount }
-        year: bets(where: { createdAt_gte: $yearAgo }) { amount }
-      }
-    `;
-
-    const res = await fetch(subgraphUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        query: VOLUME_QUERY,
-        variables: { dayAgo, weekAgo, monthAgo, yearAgo },
-      }),
-    });
-
-    if (!res.ok) return { today: 0, week: 0, month: 0, year: 0 };
-
-    const json = await res.json() as {
-      data?: {
-        day: { amount: string }[];
-        week: { amount: string }[];
-        month: { amount: string }[];
-        year: { amount: string }[];
-      };
-    };
-
-    const sum = (bets: { amount: string }[]) =>
-      bets.reduce((acc, b) => acc + parseFloat(b.amount || '0'), 0);
-
-    return {
-      today: sum(json.data?.day ?? []),
-      week: sum(json.data?.week ?? []),
-      month: sum(json.data?.month ?? []),
-      year: sum(json.data?.year ?? []),
-    };
-  } catch {
-    return { today: 0, week: 0, month: 0, year: 0 };
-  }
-}
-
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
@@ -100,9 +40,31 @@ export default async function handler(
        FROM scheduled_markets ORDER BY created_at DESC LIMIT 20`
     );
 
+    // Our own platform trading volume
+    let volume = { today: 0, week: 0, month: 0, year: 0, allTime: 0 };
+    try {
+      const [vToday, vWeek, vMonth, vYear, vAll] = await Promise.all([
+        query<{ total: string }>(`SELECT COALESCE(SUM(amount),0)::float AS total FROM platform_trades WHERE traded_at >= NOW() - INTERVAL '1 day'`),
+        query<{ total: string }>(`SELECT COALESCE(SUM(amount),0)::float AS total FROM platform_trades WHERE traded_at >= NOW() - INTERVAL '7 days'`),
+        query<{ total: string }>(`SELECT COALESCE(SUM(amount),0)::float AS total FROM platform_trades WHERE traded_at >= NOW() - INTERVAL '30 days'`),
+        query<{ total: string }>(`SELECT COALESCE(SUM(amount),0)::float AS total FROM platform_trades WHERE traded_at >= NOW() - INTERVAL '365 days'`),
+        query<{ total: string }>(`SELECT COALESCE(SUM(amount),0)::float AS total FROM platform_trades`),
+      ]);
+      volume = {
+        today: Number(vToday[0]?.total ?? 0),
+        week: Number(vWeek[0]?.total ?? 0),
+        month: Number(vMonth[0]?.total ?? 0),
+        year: Number(vYear[0]?.total ?? 0),
+        allTime: Number(vAll[0]?.total ?? 0),
+      };
+    } catch {
+      volume = { today: 0, week: 0, month: 0, year: 0, allTime: 0 };
+    }
+
+    // Visitor analytics
     let analytics = null;
     try {
-      const [vToday, vWeek, vMonth, vYear, refTotal, refPending, dailyV] = await Promise.all([
+      const [vToday, vWeek, vMonth, vYear, refTotal, refPending, dailyV, tradeCount] = await Promise.all([
         query<{ count: string }>(`SELECT COUNT(*)::int AS count FROM page_visits WHERE visited_at >= NOW() - INTERVAL '1 day'`),
         query<{ count: string }>(`SELECT COUNT(*)::int AS count FROM page_visits WHERE visited_at >= NOW() - INTERVAL '7 days'`),
         query<{ count: string }>(`SELECT COUNT(*)::int AS count FROM page_visits WHERE visited_at >= NOW() - INTERVAL '30 days'`),
@@ -112,6 +74,7 @@ export default async function handler(
         query<{ day: string; count: string }>(
           `SELECT DATE(visited_at) AS day, COUNT(*)::int AS count FROM page_visits WHERE visited_at >= NOW() - INTERVAL '7 days' GROUP BY DATE(visited_at) ORDER BY day ASC`
         ),
+        query<{ count: string }>(`SELECT COUNT(*)::int AS count FROM platform_trades WHERE traded_at >= NOW() - INTERVAL '1 day'`),
       ]);
       analytics = {
         visitors: {
@@ -124,13 +87,12 @@ export default async function handler(
           total: Number(refTotal[0]?.count ?? 0),
           pendingRewards: Number(refPending[0]?.count ?? 0),
         },
+        tradesTODAY: Number(tradeCount[0]?.count ?? 0),
         dailyVisits: dailyV,
       };
     } catch {
       analytics = null;
     }
-
-    const volume = await fetchTradingVolume();
 
     res.status(200).json({ counts: countsObj, recent, analytics, volume });
   } catch {
