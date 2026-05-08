@@ -17,6 +17,7 @@ import ProhibitedMarkets from './pages/ProhibitedMarkets';
 import ResponsibleTrading from './pages/ResponsibleTrading';
 import ContactLegal from './pages/ContactLegal';
 import AuditTrail from './pages/AuditTrail';
+import Leaderboard from './pages/Leaderboard';
 import translations from './i18n/translations.json';
 
 type Lang = 'en' | 'es';
@@ -138,6 +139,7 @@ export default function App() {
                 <Route path="responsible-trading" element={<ResponsibleTrading />} />
                 <Route path="contact-legal" element={<ContactLegal />} />
                 <Route path="audit-trail" element={<AuditTrail />} />
+                <Route path="leaderboard" element={<Leaderboard />} />
                 <Route path="admin" element={<Admin />} />
               </Route>
               <Route path="*" element={<Navigate to="/" replace />} />

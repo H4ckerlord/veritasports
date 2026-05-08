@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useI18n } from '../App';
 import { useAzuroMarket } from '../hooks/useAzuroMarkets';
 import TradeModal from '../components/TradeModal';
+import EmailNotify from '../components/EmailNotify';
 import { useOutletContext } from 'react-router-dom';
 import type { WalletState } from '../hooks/useWallet';
 
@@ -88,6 +89,8 @@ export default function MarketDetail() {
       >
         {t('markets.trade')}
       </button>
+
+      <EmailNotify wallet={wallet.address} marketId={market.conditionId} />
 
       <TradeModal
         market={tradeOpen ? market : null}

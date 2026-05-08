@@ -30,11 +30,12 @@ export default function Header({ wallet }: HeaderProps) {
   const [langOpen, setLangOpen] = useState(false);
 
   const navLinks = [
-    { to: '/markets', label: t('nav.markets') },
-    { to: '/how-to-trade', label: '📚 How to Trade' },
-    { to: '/how-it-works', label: t('nav.howItWorks') },
-    { to: '/dashboard', label: t('nav.dashboard') },
-  ];
+  { to: '/markets', label: t('nav.markets') },
+  { to: '/leaderboard', label: '🏆 Leaderboard' },
+  { to: '/how-to-trade', label: '📚 How to Trade' },
+  { to: '/how-it-works', label: t('nav.howItWorks') },
+  { to: '/dashboard', label: t('nav.dashboard') },
+];
 
   const shortAddress = wallet.address
     ? `${wallet.address.slice(0, 6)}…${wallet.address.slice(-4)}`
@@ -53,19 +54,7 @@ export default function Header({ wallet }: HeaderProps) {
             to="/"
             className="flex items-center gap-2 font-bold text-xl text-brand-600 dark:text-brand-400"
           >
-            <svg viewBox="0 0 32 32" className="w-8 h-8" fill="none">
-              <circle cx="16" cy="16" r="16" fill="#6366f1" />
-              <text
-                x="16"
-                y="22"
-                textAnchor="middle"
-                fontSize="16"
-                fontWeight="bold"
-                fill="white"
-              >
-                V
-              </text>
-            </svg>
+            <img src="/logo.svg" alt="Veritas" className="w-8 h-8" />
             Veritas
           </Link>
 

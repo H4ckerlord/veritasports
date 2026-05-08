@@ -505,7 +505,36 @@ export default async function handler(
       }
       return;
     }
-
+    // POST /api/kyc?action=email_subscribe
+    if (action === 'email_subscribe') {
+      const { wallet: w, email, marketId: mid } = req.body as {
+        wallet?: string;
+        email?: string;
+        marketId?: string | null;
+      };
+      if (!email || !email.includes('@')) {
+        res.status(400).json({ error: 'Valid email required' });
+        return;
+      }
+      try {
+        const encEmail = encryptData({ email: email.toLowerCase().trim() });
+        await query(
+          `INSERT INTO email_subscriptions (wallet_address, email_encrypted, email_iv, email_auth_tag, market_id)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [
+            (w ?? 'anonymous').toLowerCase(),
+            encEmail.encrypted,
+            encEmail.iv,
+            encEmail.authTag,
+            mid ?? null,
+          ]
+        );
+        res.status(200).json({ subscribed: true });
+      } catch {
+        res.status(500).json({ error: 'Failed to save subscription' });
+      }
+      return;
+    }
     res.status(400).json({ error: 'Unknown action' });
 
   } catch (err) {
