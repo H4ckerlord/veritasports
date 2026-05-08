@@ -72,14 +72,17 @@ function getNestedValue(obj: Record<string, unknown>, path: string): string {
 function PageTracker() {
   const location = useLocation();
   useEffect(() => {
-    fetch('/api/track', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ page: location.pathname }),
-    }).catch(() => {});
-  }, [location.pathname]);
-  return null;
-}
+    const root = document.documentElement;
+    const body = document.body;
+    if (dark) {
+      root.classList.add('dark');
+      body.style.background = '#0a0a1a';
+      body.style.color = '#e2e8f0';
+    } else {
+      root.classList.remove('dark');
+      body.style.background = '#f1f5f9';
+      body.style.color = '#0f172a';
+    }
 
 export default function App() {
   const [lang, setLang] = useState<Lang>('en');
