@@ -71,6 +71,8 @@ function getNestedValue(obj: Record<string, unknown>, path: string): string {
 
 function PageTracker() {
   const location = useLocation();
+  const { dark } = useTheme();
+
   useEffect(() => {
     const root = document.documentElement;
     const body = document.body;
@@ -83,6 +85,10 @@ function PageTracker() {
       body.style.background = '#f1f5f9';
       body.style.color = '#0f172a';
     }
+  }, [dark, location]);
+
+  return null;
+}
 
 export default function App() {
   const [lang, setLang] = useState<Lang>('en');
