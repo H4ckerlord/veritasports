@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { verifyCronSecret } from '../../services/auth';
 import { query } from '../../db/client';
 
-const PLATFORM_FEE_PERCENT = 0.02;      // 2% platform fee
+const PLATFORM_FEE_PERCENT = 0.02;      // 2% platform fee per trade
 const REFERRAL_SHARE_PERCENT = 0.30;    // referrer gets 30% of platform fee
 
 const BETS_QUERY = `
@@ -11,7 +11,7 @@ const BETS_QUERY = `
       where: { bettor_in: $wallets }
       orderBy: createdAt
       orderDirection: desc
-      first: 200
+      first: 500
     ) {
       bettor
       amount
@@ -40,7 +40,7 @@ export default async function handler(
     return;
   }
 
-  // Get all referred wallets that have not had first trade credited yet
+  // Find all referred wallets that have not had first trade credited yet
   const pending = await query<{
     id: number;
     referred_wallet: string;
@@ -53,7 +53,7 @@ export default async function handler(
   );
 
   if (pending.length === 0) {
-    res.status(200).json({ credited: 0 });
+    res.status(200).json({ credited: 0, message: 'No pending referrals to process' });
     return;
   }
 
@@ -77,7 +77,7 @@ export default async function handler(
     return;
   }
 
-  // Group bets by bettor to get total amount bet
+  // Group total trade amounts by wallet address
   const bettorAmounts: Record<string, number> = {};
   for (const bet of bets) {
     const addr = bet.bettor.toLowerCase();
@@ -92,9 +92,12 @@ export default async function handler(
     const totalBetAmount = bettorAmounts[wallet];
 
     if (totalBetAmount && totalBetAmount > 0) {
-      // Calculate reward: 30% of 2% platform fee on their total bets
-      const platformFee = totalBetAmount * PLATFORM_FEE_PERCENT;
-      const referrerReward = platformFee * REFERRAL_SHARE_PERCENT;
+      // Referral reward = 30% of the 2% platform fee on their total bets
+      // Example: user bets 100 USDC
+      // Platform fee = 100 * 0.02 = 2 USDC
+      // Referrer reward = 2 * 0.30 = 0.60 USDC
+      const platformFeeEarned = totalBetAmount * PLATFORM_FEE_PERCENT;
+      const referrerReward = platformFeeEarned * REFERRAL_SHARE_PERCENT;
 
       await query(
         `UPDATE referrals
@@ -107,5 +110,9 @@ export default async function handler(
     }
   }
 
-  res.status(200).json({ credited });
+  res.status(200).json({
+    credited,
+    message: `Processed ${pending.length} pending referrals, credited ${credited}`,
+    formula: '2% platform fee × 30% referrer share = referral reward',
+  });
 }

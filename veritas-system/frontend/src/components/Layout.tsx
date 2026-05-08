@@ -37,9 +37,7 @@ export default function Layout() {
           {/* Logo and tagline */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white font-black text-lg">
-                V
-              </div>
+              <img src="/logo.svg" alt="Veritas" className="w-8 h-8 rounded-xl" />
               <span className="font-black text-xl text-white">Veritas</span>
             </div>
             <p className="text-xs text-gray-600 text-center sm:text-right">
@@ -73,12 +71,12 @@ export default function Layout() {
         </div>
       </footer>
 
-      {/* Feedback button */}
+     {/* Feedback button */}
       <button
         onClick={() => setFeedbackOpen(true)}
-        className="fixed bottom-6 right-6 btn-primary px-4 py-2.5 rounded-full text-sm shadow-glow-brand z-20 flex items-center gap-2 relative"
+        className="fixed bottom-6 right-6 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 rounded-full shadow-lg transition z-20"
       >
-        <span className="relative z-10">💬 Feedback</span>
+        💬 Feedback
       </button>
 
       <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} wallet={wallet.address} />

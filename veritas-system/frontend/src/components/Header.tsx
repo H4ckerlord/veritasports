@@ -64,9 +64,7 @@ export default function Header({ wallet }: HeaderProps) {
 
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2.5 group">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white font-black text-lg shadow-glow-brand group-hover:shadow-lg transition-all">
-                V
-              </div>
+              <img src="/logo.svg" alt="V" className="w-8 h-8 rounded-xl shadow-glow-brand group-hover:shadow-lg transition-all" />
               <span className="font-black text-xl tracking-tight text-white group-hover:text-brand-300 transition-colors">
                 Veritas
               </span>
