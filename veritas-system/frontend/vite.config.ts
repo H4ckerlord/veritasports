@@ -3,15 +3,25 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  build: {
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          query: ['@tanstack/react-query'],
+          ethers: ['ethers'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 1000,
+  },
   server: {
     proxy: {
       '/api': {
-        target: process.env.VITE_API_BASE_URL ?? 'http://localhost:3000',
+        target: 'http://localhost:3000',
         changeOrigin: true,
       },
     },
-  },
-  build: {
-    sourcemap: false, // no source maps in production
   },
 });
