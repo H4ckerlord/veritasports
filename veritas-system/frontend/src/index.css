@@ -2,138 +2,57 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --toast-bg: #1e1b4b;
-  --toast-color: #e0e7ff;
-  --text-primary: #ffffff;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  --bg-card: rgba(255, 255, 255, 0.04);
-  --bg-card-hover: rgba(255, 255, 255, 0.07);
-  --border-color: rgba(255, 255, 255, 0.08);
-  --border-hover: rgba(99, 102, 241, 0.4);
-}
-
-html:not(.dark) {
-  --toast-bg: #ffffff;
-  --toast-color: #1e1b4b;
-  --text-primary: #0f172a;
-  --text-secondary: #374151;
-  --text-muted: #6b7280;
-  --bg-card: rgba(0, 0, 0, 0.03);
-  --bg-card-hover: rgba(0, 0, 0, 0.06);
-  --border-color: rgba(0, 0, 0, 0.1);
-  --border-hover: rgba(99, 102, 241, 0.5);
-}
-
+/* ── Base ── */
 * {
   -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
 }
 
 html {
   scroll-behavior: smooth;
 }
 
-/* Dark mode — default */
+/* Light mode — DEFAULT */
 body {
-  background: #0a0a1a;
-  color: var(--text-primary);
+  background-color: #ffffff;
+  color: #111827;
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
-  transition: background 0.3s ease, color 0.3s ease;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Light mode */
-html:not(.dark) body {
-  background: #f8fafc;
-  color: #0f172a;
+/* Dark mode */
+html.dark body {
+  background-color: #0a0a1a;
+  color: #f1f5f9;
 }
 
-/* Force ALL text to respect theme */
-html.dark * {
-  color: inherit;
-}
-
-html:not(.dark) p,
-html:not(.dark) span,
-html:not(.dark) h1,
-html:not(.dark) h2,
-html:not(.dark) h3,
-html:not(.dark) h4,
-html:not(.dark) li,
-html:not(.dark) label {
-  color: inherit;
-}
-
-/* Dark mode text colors */
-html.dark .text-white { color: #ffffff !important; }
-html.dark .text-gray-100 { color: #f1f5f9 !important; }
-html.dark .text-gray-200 { color: #e2e8f0 !important; }
-html.dark .text-gray-300 { color: #cbd5e1 !important; }
-html.dark .text-gray-400 { color: #94a3b8 !important; }
-html.dark .text-gray-500 { color: #64748b !important; }
-html.dark .text-gray-600 { color: #475569 !important; }
-html.dark .text-gray-700 { color: #334155 !important; }
-
-/* Light mode text override — make everything dark */
-html:not(.dark) .text-white { color: #0f172a !important; }
-html:not(.dark) .text-gray-100 { color: #1e293b !important; }
-html:not(.dark) .text-gray-200 { color: #1e293b !important; }
-html:not(.dark) .text-gray-300 { color: #1e293b !important; }
-html:not(.dark) .text-gray-400 { color: #374151 !important; }
-html:not(.dark) .text-gray-500 { color: #4b5563 !important; }
-html:not(.dark) .text-gray-600 { color: #6b7280 !important; }
-html:not(.dark) .text-gray-700 { color: #374151 !important; }
-html:not(.dark) .text-gray-800 { color: #1f2937 !important; }
-html:not(.dark) .text-gray-900 { color: #111827 !important; }
-
-/* Keep brand colors in both modes */
-.text-brand-300 { color: #a5b4fc !important; }
-.text-brand-400 { color: #818cf8 !important; }
-.text-brand-500 { color: #6366f1 !important; }
-.text-brand-600 { color: #4f46e5 !important; }
-.text-emerald-400 { color: #34d399 !important; }
-.text-emerald-500 { color: #10b981 !important; }
-.text-red-400 { color: #f87171 !important; }
-.text-red-500 { color: #ef4444 !important; }
-.text-yellow-400 { color: #fbbf24 !important; }
-
-/* Background adjustments for light mode */
-html:not(.dark) .card-dark {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: rgba(0, 0, 0, 0.08);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
-}
-
-html:not(.dark) .card-dark:hover {
-  background: white;
-  border-color: rgba(99, 102, 241, 0.3);
-}
-
-html:not(.dark) .glass {
-  background: rgba(255, 255, 255, 0.85);
-  border-color: rgba(0, 0, 0, 0.1);
-}
-
-html:not(.dark) .bg-dots {
-  opacity: 0.3;
-}
-
-/* Custom scrollbar */
+/* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #6366f1; border-radius: 9999px; }
 
-/* Glass effect */
+/* ── Glass effect ── */
 .glass {
-  background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Gradient text */
+/* Light glass */
+html:not(.dark) .glass {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Dark glass */
+html.dark .glass {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ── Gradient text — always same ── */
 .gradient-text {
   background: linear-gradient(135deg, #818cf8, #6366f1, #4338ca);
   -webkit-background-clip: text;
@@ -148,25 +67,40 @@ html:not(.dark) .bg-dots {
   background-clip: text;
 }
 
-/* Card styles */
+/* ── Cards ── */
 .card-dark {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
   transition: all 0.3s ease;
 }
 
-.card-dark:hover {
+html:not(.dark) .card-dark {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+html:not(.dark) .card-dark:hover {
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.12);
+  transform: translateY(-2px);
+}
+
+html.dark .card-dark {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+html.dark .card-dark:hover {
   background: rgba(255, 255, 255, 0.07);
   border-color: rgba(99, 102, 241, 0.4);
   transform: translateY(-2px);
   box-shadow: 0 8px 48px rgba(99, 102, 241, 0.15);
 }
 
-/* Button glow effect */
+/* ── Buttons ── */
 .btn-primary {
   background: linear-gradient(135deg, #6366f1, #4338ca);
-  color: white !important;
+  color: white;
   border-radius: 12px;
   font-weight: 600;
   transition: all 0.3s ease;
@@ -174,51 +108,45 @@ html:not(.dark) .bg-dots {
   overflow: hidden;
 }
 
-.btn-primary::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, #818cf8, #6366f1);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.btn-primary:hover::before {
-  opacity: 1;
-}
-
 .btn-primary:hover {
-  box-shadow: 0 0 30px rgba(99, 102, 241, 0.5);
+  box-shadow: 0 0 30px rgba(99, 102, 241, 0.4);
   transform: translateY(-1px);
+  opacity: 0.95;
 }
 
-.btn-primary span {
-  color: white !important;
+.btn-primary:disabled {
+  opacity: 0.6;
+  transform: none;
+  box-shadow: none;
 }
 
-/* Animated background dots */
+/* ── Background dots ── */
 .bg-dots {
-  background-image: radial-gradient(rgba(99, 102, 241, 0.15) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(99, 102, 241, 0.12) 1px, transparent 1px);
   background-size: 24px 24px;
 }
 
-/* Floating orbs */
+html:not(.dark) .bg-dots {
+  background-image: radial-gradient(rgba(99, 102, 241, 0.08) 1px, transparent 1px);
+}
+
+/* ── Orbs (floating background elements) ── */
 .orb {
   position: absolute;
   border-radius: 50%;
   filter: blur(60px);
-  animation: float 6s ease-in-out infinite;
   pointer-events: none;
 }
 
-/* Mobile touch feedback */
-@media (hover: none) {
-  .card-dark:hover {
-    transform: none;
-  }
+html:not(.dark) .orb {
+  opacity: 0.4;
 }
 
-/* Animations */
+html.dark .orb {
+  opacity: 1;
+}
+
+/* ── Animations ── */
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -236,16 +164,45 @@ html:not(.dark) .bg-dots {
 
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
+  50% { transform: translateY(-12px); }
 }
 
-@keyframes glow {
+@keyframes pulse-glow {
   0%, 100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.3); }
   50% { box-shadow: 0 0 40px rgba(99, 102, 241, 0.6); }
+}
+
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }
 
 .animate-fade-in { animation: fadeIn 0.5s ease-out; }
 .animate-slide-up { animation: slideUp 0.4s ease-out; }
 .animate-slide-down { animation: slideDown 0.3s ease-out; }
 .animate-float { animation: float 6s ease-in-out infinite; }
-.animate-glow { animation: glow 2s ease-in-out infinite; }
+.animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+
+/* ── Stat numbers ── */
+.stat-number { font-variant-numeric: tabular-nums; }
+
+/* ── Mobile ── */
+@media (hover: none) {
+  .card-dark:hover {
+    transform: none;
+  }
+  .btn-primary:hover {
+    transform: none;
+  }
+}
+
+/* ── Toast colors ── */
+html:not(.dark) {
+  --toast-bg: #ffffff;
+  --toast-color: #111827;
+}
+
+html.dark {
+  --toast-bg: #1e1b4b;
+  --toast-color: #e0e7ff;
+}

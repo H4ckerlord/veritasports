@@ -98,7 +98,7 @@ export default function App() {
       const saved = localStorage.getItem('theme');
       if (saved === 'dark') return true;
       if (saved === 'light') return false;
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+      return false; // Default to light mode
     } catch {
       return false;
     }
