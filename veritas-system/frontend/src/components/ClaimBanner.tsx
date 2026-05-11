@@ -44,7 +44,7 @@ export default function ClaimBanner({ wallet }: ClaimBannerProps) {
           >
             Later
           </button>
-          
+          <a
             href="https://app.azuro.org"
             target="_blank"
             rel="noopener noreferrer"
