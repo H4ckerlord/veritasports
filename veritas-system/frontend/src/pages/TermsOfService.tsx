@@ -2,7 +2,7 @@ export default function TermsOfService() {
   const sections = [
     {
       title: 'Introduction',
-      body: 'These Terms of Service govern your use of the Veritas prediction market platform. By accessing or using this platform you agree to be bound by these terms. If you do not agree you must immediately stop using the platform. Veritas is operated as a decentralised prediction market interface. The platform frontend is operated in a centralised manner for compliance purposes including user eligibility checks and geoblocking. The backend settlement, liquidity, and market resolution are handled by the Azuro Protocol, a decentralised smart contract system on the Polygon blockchain. Veritas does not hold, custody, or control user funds at any time.',
+      body: 'These Terms of Service govern your use of the Veritas sports prediction market platform. By accessing or using this platform you agree to be bound by these terms. If you do not agree you must immediately stop using the platform. Veritas is operated as a decentralised prediction market interface. The platform frontend is operated in a centralised manner for compliance purposes including user eligibility checks. The backend settlement, liquidity, and market resolution are handled by the Azuro Protocol, a decentralised smart contract system on the Polygon blockchain. Veritas does not hold, custody, or control user funds at any time.',
     },
     {
       title: 'Platform Architecture',
@@ -10,15 +10,7 @@ export default function TermsOfService() {
     },
     {
       title: 'User Eligibility',
-      body: 'You must be at least 18 years of age to use this platform. By using the platform you confirm that you are 18 years of age or older. You must not use the platform if you are located in or a resident of the United States of America or the United Kingdom. These jurisdictions are currently geoblocked pending the platform obtaining the necessary regulatory licences. You are solely responsible for ensuring your use of the platform complies with all laws and regulations applicable to you in your country, state, or region. Veritas reserves the right to restrict access from additional jurisdictions at any time.',
-    },
-    {
-      title: 'Prohibited Jurisdictions',
-      body: 'The platform currently blocks access to users from the United States of America and the United Kingdom. This restriction is in place because the platform has not yet obtained the regulatory licences required to legally offer prediction market services to residents of these jurisdictions. The platform intends to apply for the relevant licences including but not limited to a United Kingdom Gambling Commission betting intermediary licence and applicable United States licences. Until such licences are obtained access to these jurisdictions will remain blocked. Use of VPN services or other methods to circumvent geoblocking is strictly prohibited and constitutes a material breach of these terms.',
-    },
-    {
-      title: 'Licensing Roadmap',
-      body: 'Veritas is currently in pre-revenue development and operates under its decentralised architecture. The platform intends to apply for the following licences as part of its compliance roadmap: Nigerian Lottery Regulatory Commission licence, Securities and Exchange Commission of Nigeria Virtual Asset Service Provider registration, and a United Kingdom Gambling Commission betting intermediary licence. The platform will update its terms of service and user interface as licences are obtained and additional jurisdictions are permitted. This licensing roadmap is provided for transparency purposes and does not constitute a binding commitment.',
+      body: 'You must be at least 18 years of age to use this platform. By using the platform you confirm that you are 18 years of age or older. You are solely responsible for ensuring your use of the platform complies with all laws and regulations applicable to you in your country, state, or region. Veritas reserves the right to restrict access from additional jurisdictions at any time.',
     },
     {
       title: 'Identity Verification and KYC',
@@ -38,11 +30,7 @@ export default function TermsOfService() {
     },
     {
       title: 'Limitation of Liability',
-      body: 'To the maximum extent permitted by applicable law the platform operator shall not be liable for any direct, indirect, incidental, consequential, or special damages arising from your use of the platform. This includes but is not limited to financial losses from trading, losses resulting from smart contract bugs or exploits, losses resulting from blockchain network failures, losses resulting from wallet compromise, and losses resulting from oracle resolution decisions. The platform operator does not guarantee the availability, accuracy, or reliability of the platform at any time.',
-    },
-    {
-      title: 'Governing Law and Dispute Resolution',
-      body: 'These terms of service are governed by the laws of the Federal Republic of Nigeria. Any dispute arising from or relating to these terms or your use of the platform shall first be subject to good faith negotiation between the parties. If negotiation fails the dispute shall be submitted to binding arbitration in accordance with the Arbitration and Conciliation Act of Nigeria. The arbitration shall take place in Lagos, Nigeria. Notwithstanding the foregoing nothing in these terms prevents the platform operator from seeking injunctive relief in any court of competent jurisdiction.',
+      body: 'To the maximum extent permitted by applicable law the platform operator shall not be liable for any direct, indirect, incidental, consequential, or special damages arising from your use of the platform. This includes but is not limited to financial losses from trading, losses resulting from smart contract bugs or exploits, losses resulting from blockchain network failures, losses resulting from wallet compromise, and losses resulting from oracle resolution decisions.',
     },
     {
       title: 'Modifications to Terms',
@@ -60,7 +48,7 @@ export default function TermsOfService() {
         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Terms of Service</h1>
         <p className="text-sm text-gray-400">Last updated: January 2025</p>
         <div className="mt-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
-          <p className="text-sm text-red-600 dark:text-red-400 font-semibold">Risk Warning: Trading on prediction markets involves significant financial risk. Only trade with money you can afford to lose. This platform is not available to residents of the United States or United Kingdom.</p>
+          <p className="text-sm text-red-600 dark:text-red-400 font-semibold">Risk Warning: Trading on prediction markets involves significant financial risk. Only trade with money you can afford to lose.</p>
         </div>
       </div>
       {sections.map((s) => (

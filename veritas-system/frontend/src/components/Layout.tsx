@@ -4,6 +4,7 @@ import FeedbackModal from './FeedbackModal';
 import ReferralBanner from './ReferralBanner';
 import KycModal from './KycModal';
 import InstallPrompt from './InstallPrompt';
+import ClaimBanner from './ClaimBanner';
 import { useWallet } from '../hooks/useWallet';
 import { useState } from 'react';
 
@@ -74,6 +75,7 @@ export default function Layout() {
       <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} wallet={wallet.address} />
       <KycModal wallet={wallet.address} />
       <InstallPrompt />
+      <ClaimBanner wallet={wallet.address} />
     </div>
   );
 }

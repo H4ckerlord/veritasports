@@ -183,7 +183,7 @@ export default function Home() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-2xl font-black text-gray-900 dark:text-white">Live Activity</h2>
-              <p className="text-gray-500 dark:text-gray-500 text-sm mt-1">Real-time bets from the Azuro network</p>
+              <p className="text-gray-500 dark:text-gray-500 text-sm mt-1">Real-time bets</p>
             </div>
             <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm font-semibold">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -203,7 +203,7 @@ export default function Home() {
             <div className="orb w-32 h-32 bg-white/10 -bottom-5 -left-5" style={{ animationDelay: '3s' }} />
             <div className="relative">
               <p className="text-4xl mb-3">🎁</p>
-              <h2 className="text-2xl sm:text-3xl font-black text-white mb-3">Earn 1 USDC Per Referral</h2>
+              <h2 className="text-2xl sm:text-3xl font-black text-white mb-3">Earn 30% Per Referral</h2>
               <p className="text-indigo-100 mb-6 max-w-md mx-auto">
                 Share your link. Every friend who places their first trade earns you a reward automatically.
               </p>

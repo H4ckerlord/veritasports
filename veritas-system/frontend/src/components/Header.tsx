@@ -36,12 +36,13 @@ export default function Header({ wallet }: HeaderProps) {
 
   useEffect(() => { setMenuOpen(false); }, [location.pathname]);
 
-  const navLinks = [
-    { to: '/markets', label: t('nav.markets') },
-    { to: '/leaderboard', label: 'Leaderboard' },
-    { to: '/how-to-trade', label: 'How to Trade' },
-    { to: '/dashboard', label: t('nav.dashboard') },
-  ];
+ const navLinks = [
+      { to: '/', label: '🏠 Home' },
+      { to: '/markets', label: t('nav.markets') },
+      { to: '/leaderboard', label: 'Leaderboard' },
+      { to: '/how-to-trade', label: 'How to Trade' },
+      { to: '/dashboard', label: t('nav.dashboard') },
+    ];
 
   const shortAddress = wallet.address
     ? `${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}`
@@ -68,7 +69,9 @@ export default function Header({ wallet }: HeaderProps) {
             {/* Desktop nav */}
             <nav className="hidden md:flex items-center gap-1">
               {navLinks.map((link) => {
-                const isActive = location.pathname === link.to;
+                const isActive = link.to === '/'
+                    ? location.pathname === '/'
+                    : location.pathname.startsWith(link.to);
                 return (
                   <Link
                     key={link.to}

@@ -125,7 +125,7 @@ export default function Dashboard() {
         ) : (
           <div className="space-y-3">
             <p className="text-sm text-gray-400">
-              Generate a referral link and earn 1 USDC for each friend who makes their first trade.
+              Generate a referral link and earn 30% for each friend who makes their first trade.
             </p>
             <button
               onClick={handleGenerateCode}
