@@ -57,7 +57,7 @@ export function useReferral(wallet: string | null) {
       setData({
         referralCode: json.referralCode,
         referralLink: json.referralCode
-          ? `https://veritass-alpha.vercel.app?ref=${encodeURIComponent(json.referralCode)}`
+          ? `https://veritasports.com?ref=${encodeURIComponent(json.referralCode)}`
           : null,
         pendingUsdc: json.pendingUsdc,
         claimedUsdc: json.claimedUsdc,
