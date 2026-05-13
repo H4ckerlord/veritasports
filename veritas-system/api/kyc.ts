@@ -277,81 +277,6 @@ async function screenWithWalletScreener(wallet: string): Promise<{ passed: boole
   return { passed, score, details };
 }
 
-  const res = await fetch('https://openapi.misttrack.io/v1/risk_score', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'API-Key': apiKey,
-    },
-    body: JSON.stringify({
-      coin: 'MATIC',
-      address: wallet,
-    }),
-  });
-
-  if (!res.ok) throw new Error(`MistTrack API error: ${res.status}`);
-  const data = await res.json() as {
-    success: boolean;
-    data: {
-      risk_score: number;
-      risk_level: string;
-      risk_detail?: {
-        sanctions: boolean;
-        darknet: boolean;
-        mixer: boolean;
-        fraud: boolean;
-      };
-    };
-  };
-
-  if (!data.success) throw new Error('MistTrack screening failed');
-
-  const score = data.data.risk_score;
-  const riskLevel = data.data.risk_level;
-  const detail = data.data.risk_detail;
-
-  const flags: string[] = [];
-  if (detail?.sanctions) flags.push('SANCTIONS');
-  if (detail?.darknet) flags.push('DARKNET');
-  if (detail?.mixer) flags.push('MIXER');
-  if (detail?.fraud) flags.push('FRAUD');
-
-  const details = flags.length > 0 ? flags.join(', ') : 'CLEAN';
-  const passed = score < 70 && flags.length === 0;
-
-  await query(
-    `UPDATE user_kyc
-     SET misttrack_score = $1, misttrack_screened_at = NOW(), updated_at = NOW()
-     WHERE wallet_address = $2`,
-    [score, wallet.toLowerCase()]
-  );
-
-  if (passed) {
-    await query(
-      `UPDATE user_kyc SET tier = 3, kyc_status = 'tier3_passed', updated_at = NOW() WHERE wallet_address = $1`,
-      [wallet.toLowerCase()]
-    );
-    await logAudit(wallet, 'TIER3_PASSED', `Score: ${score}`);
-  } else {
-    await query(
-      `UPDATE user_kyc
-       SET kyc_status = 'tier3_failed', is_frozen = TRUE, freeze_reason = $1, updated_at = NOW()
-       WHERE wallet_address = $2`,
-      [`AML flags detected: ${details}`, wallet.toLowerCase()]
-    );
-    await logAudit(wallet, 'TIER3_FAILED', `Score: ${score}, Flags: ${details}`);
-  }
-
-  const encData = encryptData({ score, riskLevel, flags, screenedAt: new Date().toISOString() });
-  await query(
-    `INSERT INTO kyc_data (wallet_address, encrypted_data, iv, auth_tag, data_type)
-     VALUES ($1, $2, $3, $4, 'tier3_aml')`,
-    [wallet.toLowerCase(), encData.encrypted, encData.iv, encData.authTag]
-  );
-
-  return { passed, score, details };
-}
-
 async function updateVolume(wallet: string, betAmount: number): Promise<{
   newVolume: number;
   needsTier2: boolean;
@@ -453,7 +378,7 @@ export default async function handler(
       return;
     }
 
-    // POST /api/kyc?action=screen — MistTrack AML screening
+    // POST /api/kyc?action=screen — WalletScreener AML screening
     if (action === 'screen') {
       const { wallet } = req.body as { wallet?: string };
       if (!wallet || !/^0x[0-9a-fA-F]{40}$/.test(wallet)) {
