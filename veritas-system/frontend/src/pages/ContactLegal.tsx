@@ -13,11 +13,7 @@ export default function ContactLegal() {
         },
         {
           title: 'Official Contact Email',
-          body: '[YOUR LEGAL EMAIL ADDRESS HERE - You will add this later]',
-        },
-        {
-          title: 'Physical Address',
-          body: '[YOUR BUSINESS ADDRESS HERE - You will add this later when registered]',
+          body: 'compliance@veritasports.com',
         },
         {
           title: 'Law Enforcement Guidelines',

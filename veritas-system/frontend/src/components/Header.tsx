@@ -37,7 +37,7 @@ export default function Header({ wallet }: HeaderProps) {
   useEffect(() => { setMenuOpen(false); }, [location.pathname]);
 
  const navLinks = [
-      { to: '/', label: '🏠 Home' },
+      { to: '/', label: 'Home' },
       { to: '/markets', label: t('nav.markets') },
       { to: '/leaderboard', label: 'Leaderboard' },
       { to: '/how-to-trade', label: 'How to Trade' },

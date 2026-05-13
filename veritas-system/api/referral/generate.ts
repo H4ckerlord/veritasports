@@ -60,7 +60,7 @@ export default async function handler(
 
     if (existing.length > 0) {
       const code = existing[0].code;
-      const link = `https://veritass-alpha.vercel.app?ref=${encodeURIComponent(code)}`;
+      const link = `https://veritasports.com?ref=${encodeURIComponent(code)}`;
       res.status(200).json({ code, link });
       return;
     }
@@ -89,7 +89,7 @@ export default async function handler(
       [code, lower]
     );
 
-    const link = `https://veritass-alpha.vercel.app?ref=${encodeURIComponent(code)}`;
+    const link = `https://veritasports.com?ref=${encodeURIComponent(code)}`;
     res.status(200).json({ code, link });
 
   } catch (err) {

@@ -5,16 +5,17 @@ export default defineConfig({
   plugins: [react()],
   build: {
     sourcemap: false,
+    chunkSizeWarningLimit: 1500,
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          query: ['@tanstack/react-query'],
-          ethers: ['ethers'],
+          'react-core': ['react', 'react-dom'],
+          'react-router': ['react-router-dom'],
+          'react-query': ['@tanstack/react-query'],
+          'ethers': ['ethers'],
         },
       },
     },
-    chunkSizeWarningLimit: 1000,
   },
   server: {
     proxy: {
