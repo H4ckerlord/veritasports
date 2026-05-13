@@ -75,7 +75,7 @@ export default function Dashboard() {
         </p>
 
         {/* Primary action - takes user directly to their bets */}
-        
+        <a
           href={`${AZURO_BET_URL}?address=${wallet.address}`}
           target="_blank"
           rel="noopener noreferrer"
@@ -92,7 +92,7 @@ export default function Dashboard() {
         </a>
 
         {/* Secondary direct link */}
-        
+        <a
           href="https://app.azuro.org"
           target="_blank"
           rel="noopener noreferrer"
