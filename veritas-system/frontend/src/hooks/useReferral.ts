@@ -18,6 +18,7 @@ export function useReferral(wallet: string | null) {
   const [data, setData] = useState<ReferralData | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Apply referral code from URL when wallet connects
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const refCode = params.get('ref');
@@ -28,16 +29,17 @@ export function useReferral(wallet: string | null) {
 
   async function applyReferralCode(code: string, walletAddr: string) {
     try {
-      await fetch('/api/referral/register', {
+      await fetch('/api/referral?action=register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code, wallet: walletAddr }),
       });
+      // Remove ref param from URL after processing
       const url = new URL(window.location.href);
       url.searchParams.delete('ref');
       window.history.replaceState({}, '', url.toString());
     } catch {
-      // silent
+      // Silent — referral registration is non-critical
     }
   }
 
@@ -45,26 +47,25 @@ export function useReferral(wallet: string | null) {
     setLoading(true);
     try {
       const res = await fetch(
-        `/api/referral/rewards?wallet=${encodeURIComponent(walletAddr)}`
+        `/api/referral?action=rewards&wallet=${encodeURIComponent(walletAddr)}`
       );
-      if (!res.ok) throw new Error('Failed');
+      if (!res.ok) throw new Error('Failed to fetch referral data');
       const json = await res.json() as {
         referralCode: string | null;
+        referralLink: string | null;
         pendingUsdc: string;
         claimedUsdc: string;
         referrals: ReferralData['referrals'];
       };
       setData({
         referralCode: json.referralCode,
-        referralLink: json.referralCode
-          ? `https://veritasports.com?ref=${encodeURIComponent(json.referralCode)}`
-          : null,
+        referralLink: json.referralLink,
         pendingUsdc: json.pendingUsdc,
         claimedUsdc: json.claimedUsdc,
         referrals: json.referrals,
       });
     } catch {
-      // silent
+      // Silent on fetch errors
     } finally {
       setLoading(false);
     }
@@ -72,7 +73,7 @@ export function useReferral(wallet: string | null) {
 
   async function generateCode(walletAddr: string): Promise<string | null> {
     try {
-      const res = await fetch('/api/referral/generate', {
+      const res = await fetch('/api/referral?action=generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ wallet: walletAddr }),
@@ -93,25 +94,36 @@ export function useReferral(wallet: string | null) {
 
   async function claimRewards(walletAddr: string): Promise<void> {
     try {
-      const res = await fetch('/api/referral/claim', {
+      const res = await fetch('/api/referral?action=claim', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ wallet: walletAddr }),
       });
       const json = await res.json() as { message: string; amount?: string };
-      toast.success(`${json.message}${json.amount ? ` - ${json.amount} USDC` : ''}`);
+      toast.success(
+        json.amount && parseFloat(json.amount) > 0
+          ? `Claimed ${json.amount} USDC successfully!`
+          : json.message
+      );
       await fetchReferralData(walletAddr);
     } catch {
-      toast.error('Claim failed. Try again later.');
+      toast.error('Claim failed. Please try again later.');
     }
   }
 
   useEffect(() => {
-    if (wallet) fetchReferralData(wallet);
-    else setData(null);
+    if (wallet) {
+      fetchReferralData(wallet);
+    } else {
+      setData(null);
+    }
   }, [wallet]);
 
-  const referralLink = data?.referralLink ?? null;
-
-  return { data, loading, referralLink, generateCode, claimRewards };
+  return {
+    data,
+    loading,
+    referralLink: data?.referralLink ?? null,
+    generateCode,
+    claimRewards,
+  };
 }
