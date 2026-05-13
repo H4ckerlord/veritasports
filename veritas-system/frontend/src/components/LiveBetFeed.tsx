@@ -1,53 +1,43 @@
 import { useEffect, useState, useCallback } from 'react';
+import { fetchConditionGameMap } from '../hooks/useAzuroMarkets';
 
-// Bet‑history subgraph URLs (V3 for mainnet, V2 for testnet)
 const BET_SUBGRAPH_MAINNET =
   'https://thegraph.onchainfeed.org/subgraphs/name/azuro-protocol/azuro-api-polygon-v3';
 const BET_SUBGRAPH_TESTNET =
   'https://api.thegraph.com/subgraphs/name/azuro-protocol/azuro-polygon-amoy-v2';
 
 function getBetsSubgraphUrl(): string {
-  const chainId = String(
-    (import.meta as any).env?.VITE_AZURO_CHAIN_ID ?? '80002'
-  );
+  const chainId = String((import.meta as any).env?.VITE_AZURO_CHAIN_ID ?? '80002');
   return chainId === '137' ? BET_SUBGRAPH_MAINNET : BET_SUBGRAPH_TESTNET;
 }
 
-interface LiveBet {
+interface V3Bet {
   id: string;
   bettor: string;
   amount: string;
   createdBlockTimestamp: string;
-  outcome: {
-    outcomeId: string;
-    condition: {
-      conditionId: string;
-      game: {
-        title: string;
-        sport?: { name: string };
+  selections: {
+    outcome?: {
+      outcomeId: string;
+      condition?: {
+        conditionId: string;
       };
     };
-  } | null;
+  }[];
 }
 
 const LIVE_BETS_QUERY = `
   query LiveBets {
-    bets(
-      first: 20
-      orderBy: createdBlockTimestamp
-      orderDirection: desc
-    ) {
+    v3Bets(first: 20, orderBy: createdBlockTimestamp, orderDirection: desc) {
       id
       bettor
       amount
       createdBlockTimestamp
-      outcome {
-        outcomeId
-        condition {
-          conditionId
-          game {
-            title
-            sport { name }
+      selections {
+        outcome {
+          outcomeId
+          condition {
+            conditionId
           }
         }
       }
@@ -69,15 +59,22 @@ function timeAgo(ts: string): string {
 }
 
 function formatAmount(amount: string): string {
-  const val = parseFloat(amount) / 1e18;
+  // USDC has 6 decimals
+  const val = parseInt(amount) / 1e6;
   if (isNaN(val)) return '0.00';
   return val.toFixed(2);
 }
 
 export default function LiveBetFeed() {
-  const [bets, setBets] = useState<LiveBet[]>([]);
+  const [bets, setBets] = useState<V3Bet[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [conditionMap, setConditionMap] = useState<Map<string, { title: string; sport?: string }>>(new Map());
+
+  // 1. Fetch the conditionId → game title map (shared across components)
+  useEffect(() => {
+    fetchConditionGameMap().then(setConditionMap).catch(console.error);
+  }, []);
 
   const fetchBets = useCallback(async () => {
     try {
@@ -87,18 +84,10 @@ export default function LiveBetFeed() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: LIVE_BETS_QUERY }),
       });
-
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-      const json = await res.json() as {
-        data?: { bets: LiveBet[] };
-        errors?: unknown[];
-      };
-
+      const json = await res.json() as { data?: { v3Bets: V3Bet[] }; errors?: unknown[] };
       if (json.errors?.length) throw new Error('Subgraph error');
-
-      const fetchedBets = json.data?.bets ?? [];
-      setBets(fetchedBets);
+      setBets(json.data?.v3Bets ?? []);
       setError(false);
     } catch {
       setError(true);
@@ -117,10 +106,7 @@ export default function LiveBetFeed() {
     return (
       <div className="space-y-2">
         {[1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="h-12 rounded-xl bg-gray-100 dark:bg-white/5 animate-pulse"
-          />
+          <div key={i} className="h-12 rounded-xl bg-gray-100 dark:bg-white/5 animate-pulse" />
         ))}
       </div>
     );
@@ -130,14 +116,9 @@ export default function LiveBetFeed() {
     return (
       <div className="text-center py-8 space-y-2">
         <p className="text-gray-400 text-sm">
-          {error
-            ? 'Unable to load live activity. Check your network connection.'
-            : 'No recent activity yet. Be the first to trade!'}
+          {error ? 'Unable to load live activity.' : 'No recent activity yet.'}
         </p>
-        <button
-          onClick={fetchBets}
-          className="text-xs text-brand-500 hover:underline"
-        >
+        <button onClick={fetchBets} className="text-xs text-brand-500 hover:underline">
           Retry
         </button>
       </div>
@@ -147,10 +128,12 @@ export default function LiveBetFeed() {
   return (
     <div className="space-y-2">
       {bets.map((bet) => {
-        const gameTitle =
-          bet.outcome?.condition?.game?.title ?? 'Unknown Market';
-        const sport = bet.outcome?.condition?.game?.sport?.name;
-        const outId = parseInt(bet.outcome?.outcomeId ?? '0');
+        const firstSelection = bet.selections?.[0];
+        const conditionId = firstSelection?.outcome?.condition?.conditionId ?? '';
+        const gameInfo = conditionMap.get(conditionId);
+        const gameTitle = gameInfo?.title ?? 'Unknown Market';
+        const sport = gameInfo?.sport;
+        const outId = parseInt(firstSelection?.outcome?.outcomeId ?? '0');
         const isYes = outId % 2 === 1;
         const amount = formatAmount(bet.amount);
 
@@ -162,9 +145,7 @@ export default function LiveBetFeed() {
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
               <div className="min-w-0">
-                <p className="text-xs font-mono text-gray-500 dark:text-gray-400">
-                  {shortWallet(bet.bettor)}
-                </p>
+                <p className="text-xs font-mono text-gray-500 dark:text-gray-400">{shortWallet(bet.bettor)}</p>
                 <p className="text-xs text-gray-700 dark:text-gray-300 truncate max-w-[180px] sm:max-w-[260px]">
                   {sport ? `[${sport}] ` : ''}{gameTitle}
                 </p>
@@ -180,19 +161,13 @@ export default function LiveBetFeed() {
               >
                 {isYes ? 'YES' : 'NO'}
               </span>
-              <span className="text-xs font-bold text-gray-900 dark:text-white">
-                {amount} USDC
-              </span>
-              <span className="text-xs text-gray-400 hidden sm:block">
-                {timeAgo(bet.createdBlockTimestamp)}
-              </span>
+              <span className="text-xs font-bold text-gray-900 dark:text-white">{amount} USDC</span>
+              <span className="text-xs text-gray-400 hidden sm:block">{timeAgo(bet.createdBlockTimestamp)}</span>
             </div>
           </div>
         );
       })}
-      <p className="text-center text-xs text-gray-400 pt-1">
-        Live from Azuro Protocol · Updates every 30s
-      </p>
+      <p className="text-center text-xs text-gray-400 pt-1">Live from Azuro Protocol · Updates every 30s</p>
     </div>
   );
 }
