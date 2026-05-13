@@ -19,9 +19,7 @@ interface V3Bet {
   selections: {
     outcome?: {
       outcomeId: string;
-      condition?: {
-        conditionId: string;
-      };
+      condition?: { conditionId: string };
     };
   }[];
 }
@@ -36,9 +34,7 @@ const LIVE_BETS_QUERY = `
       selections {
         outcome {
           outcomeId
-          condition {
-            conditionId
-          }
+          condition { conditionId }
         }
       }
     }
@@ -52,27 +48,35 @@ function shortWallet(addr: string): string {
 
 function timeAgo(ts: string): string {
   const seconds = Math.floor(Date.now() / 1000) - parseInt(ts);
+  if (isNaN(seconds)) return '';
   if (seconds < 60) return `${seconds}s ago`;
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
   if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
   return `${Math.floor(seconds / 86400)}d ago`;
 }
 
-function formatAmount(amount: string): string {
-  // USDC has 6 decimals – the subgraph returns raw integer as string
-  const val = parseInt(amount) / 1e6;
+function formatAmount(raw: string): string {
+  const val = parseInt(raw);
   if (isNaN(val)) return '0.00';
-  return val.toFixed(2);
+  return (val / 1e6).toFixed(2); // USDC uses 6 decimals
 }
 
 export default function LiveBetFeed() {
   const [bets, setBets] = useState<V3Bet[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [conditionMap, setConditionMap] = useState<Map<string, { title: string; sport?: string }>>(new Map());
+  const [conditionMap, setConditionMap] = useState<
+    Map<string, { title: string; sport?: string }>
+  >(new Map());
+  const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
-    fetchConditionGameMap().then(setConditionMap).catch(console.error);
+    fetchConditionGameMap()
+      .then((m) => {
+        setConditionMap(m);
+        setMapReady(true);
+      })
+      .catch(console.error);
   }, []);
 
   const fetchBets = useCallback(async () => {
@@ -84,7 +88,10 @@ export default function LiveBetFeed() {
         body: JSON.stringify({ query: LIVE_BETS_QUERY }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json() as { data?: { v3Bets: V3Bet[] }; errors?: unknown[] };
+      const json = await res.json() as {
+        data?: { v3Bets: V3Bet[] };
+        errors?: unknown[];
+      };
       if (json.errors?.length) throw new Error('Subgraph error');
       setBets(json.data?.v3Bets ?? []);
       setError(false);
@@ -101,7 +108,7 @@ export default function LiveBetFeed() {
     return () => clearInterval(interval);
   }, [fetchBets]);
 
-  if (loading) {
+  if (loading || !mapReady) {
     return (
       <div className="space-y-2">
         {[1, 2, 3].map((i) => (
@@ -144,7 +151,9 @@ export default function LiveBetFeed() {
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
               <div className="min-w-0">
-                <p className="text-xs font-mono text-gray-500 dark:text-gray-400">{shortWallet(bet.bettor)}</p>
+                <p className="text-xs font-mono text-gray-500 dark:text-gray-400">
+                  {shortWallet(bet.bettor)}
+                </p>
                 <p className="text-xs text-gray-700 dark:text-gray-300 truncate max-w-[180px] sm:max-w-[260px]">
                   {sport ? `[${sport}] ` : ''}{gameTitle}
                 </p>
@@ -160,13 +169,19 @@ export default function LiveBetFeed() {
               >
                 {isYes ? 'YES' : 'NO'}
               </span>
-              <span className="text-xs font-bold text-gray-900 dark:text-white">{amount} USDC</span>
-              <span className="text-xs text-gray-400 hidden sm:block">{timeAgo(bet.createdBlockTimestamp)}</span>
+              <span className="text-xs font-bold text-gray-900 dark:text-white">
+                {amount} USDC
+              </span>
+              <span className="text-xs text-gray-400 hidden sm:block">
+                {timeAgo(bet.createdBlockTimestamp)}
+              </span>
             </div>
           </div>
         );
       })}
-      <p className="text-center text-xs text-gray-400 pt-1">Live from Azuro Protocol · Updates every 30s</p>
+      <p className="text-center text-xs text-gray-400 pt-1">
+        Live from Azuro Protocol · Updates every 30s
+      </p>
     </div>
   );
 }
