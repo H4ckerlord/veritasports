@@ -1,10 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 
-// ── New V3 Backend API (Production) ──────────────────────────────
 const API_BASE = 'https://api.onchainfeed.org/api/v1/public';
-const WS_URL   = 'wss://streams.onchainfeed.org/v1/streams/feed';
+// Mandatory for all requests as per Azuro V3 API
+const ENVIRONMENT = 'PolygonUSDT';
 
-// ── Types ────────────────────────────────────────────────────────
 export interface Outcome {
   outcomeId: string;
   currentOdds: string;
@@ -23,57 +22,90 @@ export interface AzuroMarket {
   outcomes: Outcome[];
 }
 
-// ── Helper: fetch navigation tree (sports / leagues / countries) ─
-async function fetchNavigation(): Promise<any> {
-  const res = await fetch(`${API_BASE}/market-manager/navigation`);
-  if (!res.ok) throw new Error(`Navigation fetch failed: ${res.status}`);
-  return res.json();
+interface GameData {
+  gameId: string;
+  title: string;
+  startsAt: string;
+  sport?: { name: string; slug: string };
+  league?: { name: string; country?: { name: string } };
 }
 
-// ── Helper: fetch game IDs by filter ─────────────────────────────
-async function fetchGameIds(sportSlug?: string, leagueSlug?: string): Promise<string[]> {
-  const params = new URLSearchParams();
-  if (sportSlug)  params.set('sportSlug',  sportSlug);
-  if (leagueSlug) params.set('leagueSlug', leagueSlug);
-
-  const res = await fetch(`${API_BASE}/market-manager/games-by-filters?${params.toString()}`);
-  if (!res.ok) throw new Error(`Games fetch failed: ${res.status}`);
-  const json = await res.json() as { games?: { gameId: string }[] };
-  return (json.games ?? []).map((g) => g.gameId);
+interface GamesResponse {
+  games?: GameData[];
 }
 
-// ── Helper: fetch conditions (markets) for a list of game IDs ────
-async function fetchConditions(gameIds: string[]): Promise<AzuroMarket[]> {
+interface ConditionItem {
+  conditionId: string;
+  status: string;
+  outcomes?: { outcomeId: string; currentOdds: string }[];
+  game: GameData;
+}
+
+interface ConditionsResponse {
+  conditions?: ConditionItem[];
+}
+
+async function fetchGames(): Promise<GameData[]> {
+  const params = new URLSearchParams({
+    environment: ENVIRONMENT,
+    state: 'Prematch',
+    perPage: '100',
+    page: '1',
+  });
+
+  const url = `${API_BASE}/market-manager/games-by-filters?${params.toString()}`;
+  const res = await fetch(url);
+
+  if (!res.ok) {
+    const errorBody = await res.text();
+    throw new Error(`Games fetch failed: ${res.status} - ${errorBody}`);
+  }
+
+  const json = (await res.json()) as GamesResponse;
+  return json.games ?? [];
+}
+
+async function fetchConditions(gameIds: string[]): Promise<ConditionItem[]> {
   if (gameIds.length === 0) return [];
 
-  const res = await fetch(`${API_BASE}/market-manager/conditions-by-game-ids`, {
+  const url = `${API_BASE}/market-manager/conditions-by-game-ids?environment=${ENVIRONMENT}`;
+  const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ gameIds }),
   });
-  if (!res.ok) throw new Error(`Conditions fetch failed: ${res.status}`);
-  const json = await res.json() as { conditions?: AzuroMarket[] };
-  return (json.conditions ?? []).filter(
-    (c) => c.outcomes && c.outcomes.length >= 2
-  );
+
+  if (!res.ok) {
+    const errorBody = await res.text();
+    throw new Error(`Conditions fetch failed: ${res.status} - ${errorBody}`);
+  }
+
+  const json = (await res.json()) as ConditionsResponse;
+  return json.conditions ?? [];
 }
 
-// ── Main fetch function (used by React Query) ────────────────────
 async function fetchMarketsFromAPI(): Promise<AzuroMarket[]> {
-  // 1. Get the navigation tree (optional – you can cache it later)
-  // 2. Fetch game IDs for the top sport / league you want to show
-  //    (For now we fetch ALL games – you can add filters later)
-  const gameIds = await fetchGameIds();   // no filter → all active games
-  // 3. Fetch the actual market conditions
-  return fetchConditions(gameIds);
+  const games = await fetchGames();
+  if (games.length === 0) return [];
+
+  const gameIds = games.map((g) => g.gameId);
+  const conditions = await fetchConditions(gameIds);
+
+  return conditions
+    .filter((c) => c.outcomes && c.outcomes.length >= 2)
+    .map((c) => ({
+      conditionId: c.conditionId,
+      status: c.status,
+      game: c.game,
+      outcomes: c.outcomes!,
+    }));
 }
 
-// ── React Query hook ─────────────────────────────────────────────
 export function useAzuroMarkets() {
   return useQuery({
     queryKey: ['azuro-markets'],
     queryFn: fetchMarketsFromAPI,
-    refetchInterval: 30_000,            // poll every 30 seconds
+    refetchInterval: 30_000,
     retry: 3,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
     staleTime: 15_000,
@@ -85,9 +117,3 @@ export function useAzuroMarket(conditionId: string | undefined) {
   const market = markets?.find((m) => m.conditionId === conditionId);
   return { market, ...rest };
 }
-
-// ── (Optional) WebSocket for real‑time odds updates ──────────────
-// You can subscribe to `WS_URL` to receive instant price changes.
-// Example:
-//   const ws = new WebSocket(WS_URL);
-//   ws.onmessage = (event) => { … };
