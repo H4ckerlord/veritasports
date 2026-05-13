@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 
 const API_BASE = 'https://api.onchainfeed.org/api/v1/public';
 const ENVIRONMENT = 'PolygonUSDT';
@@ -42,7 +42,7 @@ async function fetchGames(): Promise<GameData[]> {
     gameState: 'Prematch',
     orderBy: 'startsAt',
     orderDirection: 'asc',
-    perPage: '10',        // minimum 10
+    perPage: '10',
     page: '1',
   });
   const res = await fetch(`${API_BASE}/market-manager/games-by-filters?${params.toString()}`);
@@ -56,11 +56,16 @@ async function fetchGames(): Promise<GameData[]> {
 
 async function fetchConditions(gameIds: string[]): Promise<ConditionItem[]> {
   if (gameIds.length === 0) return [];
-  const res = await fetch(`${API_BASE}/market-manager/conditions-by-game-ids?environment=${ENVIRONMENT}`, {
+
+  const res = await fetch(`${API_BASE}/market-manager/conditions-by-game-ids`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ gameIds }),
+    body: JSON.stringify({
+      environment: ENVIRONMENT,   // ← REQUIRED in body
+      gameIds,
+    }),
   });
+
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`Conditions fetch failed: ${res.status} - ${text}`);
@@ -90,7 +95,6 @@ export async function fetchConditionGameMap(): Promise<Map<string, { title: stri
   return map;
 }
 
-// Invalidate the cache so it refreshes after a while (optional)
 export function clearConditionGameMapCache() {
   conditionGameMapCache = null;
 }

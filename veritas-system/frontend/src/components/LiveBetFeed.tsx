@@ -59,7 +59,7 @@ function timeAgo(ts: string): string {
 }
 
 function formatAmount(amount: string): string {
-  // USDC has 6 decimals
+  // USDC has 6 decimals – the subgraph returns raw integer as string
   const val = parseInt(amount) / 1e6;
   if (isNaN(val)) return '0.00';
   return val.toFixed(2);
@@ -71,7 +71,6 @@ export default function LiveBetFeed() {
   const [error, setError] = useState(false);
   const [conditionMap, setConditionMap] = useState<Map<string, { title: string; sport?: string }>>(new Map());
 
-  // 1. Fetch the conditionId → game title map (shared across components)
   useEffect(() => {
     fetchConditionGameMap().then(setConditionMap).catch(console.error);
   }, []);
