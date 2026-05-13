@@ -5,7 +5,7 @@ interface LiveBet {
   id: string;
   bettor: string;
   amount: string;
-  createdAt: string;
+  createdBlockTimestamp: string; // ✅ changed from 'createdAt'
   outcome: {
     outcomeId: string;
     condition: {
