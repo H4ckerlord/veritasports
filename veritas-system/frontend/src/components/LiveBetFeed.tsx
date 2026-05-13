@@ -56,9 +56,10 @@ function timeAgo(ts: string): string {
 }
 
 function formatAmount(raw: string): string {
-  const val = parseInt(raw);
-  if (isNaN(val)) return '0.00';
-  return (val / 1e6).toFixed(2); // USDC uses 6 decimals
+  const val = parseFloat(raw);
+  if (isNaN(val) || val === 0) return '0.00';
+  // Azuro v3 subgraph returns `amount` as a formatted BigDecimal (already human-readable)
+  return val.toFixed(2);
 }
 
 export default function LiveBetFeed() {
@@ -71,12 +72,17 @@ export default function LiveBetFeed() {
   const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
+    console.log('[Veritas] LiveBetFeed: fetching condition map …');
     fetchConditionGameMap()
       .then((m) => {
+        console.log('[Veritas] LiveBetFeed: map received —', m.size, 'entries');
         setConditionMap(m);
         setMapReady(true);
       })
-      .catch(console.error);
+      .catch((err) => {
+        console.error('[Veritas] LiveBetFeed: failed to fetch map', err);
+        setMapReady(true); // still allow showing bets, even if titles are unknown
+      });
   }, []);
 
   const fetchBets = useCallback(async () => {
@@ -88,14 +94,17 @@ export default function LiveBetFeed() {
         body: JSON.stringify({ query: LIVE_BETS_QUERY }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json() as {
+      const json = (await res.json()) as {
         data?: { v3Bets: V3Bet[] };
         errors?: unknown[];
       };
       if (json.errors?.length) throw new Error('Subgraph error');
-      setBets(json.data?.v3Bets ?? []);
+      const raw = json.data?.v3Bets ?? [];
+      console.log('[Veritas] LiveBetFeed: received', raw.length, 'bets');
+      setBets(raw);
       setError(false);
-    } catch {
+    } catch (e) {
+      console.error('[Veritas] LiveBetFeed: fetch error', e);
       setError(true);
     } finally {
       setLoading(false);
