@@ -8,9 +8,12 @@ interface MarketCardProps {
   onTrade?: (market: AzuroMarket) => void;
 }
 
-function formatOdds(oddsRaw: string): string {
-  const decimal = Number(oddsRaw) / 1e9;
-  return decimal.toFixed(2);
+// odds are already decimal (e.g. "1.7", "2.1") – convert to percentage
+function formatProbability(oddsRaw: string): string {
+  const decimal = Number(oddsRaw);
+  if (!decimal || decimal <= 0) return '0%';
+  const pct = (1 / decimal) * 100;
+  return pct.toFixed(1) + '%';
 }
 
 function useCountdown(endTimestamp: number) {
@@ -102,7 +105,7 @@ export default function MarketCard({ market, onTrade }: MarketCardProps) {
         {market.game.title}
       </h3>
 
-      {/* Odds */}
+      {/* Odds as percentages */}
       <div className="grid grid-cols-2 gap-2">
         {yes && (
           <button
@@ -110,7 +113,7 @@ export default function MarketCard({ market, onTrade }: MarketCardProps) {
             className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-xl p-3 text-center hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition"
           >
             <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 mb-1">{t('markets.yes')}</p>
-            <p className="text-xl font-black text-emerald-600 dark:text-emerald-300">{formatOdds(yes.currentOdds)}x</p>
+            <p className="text-xl font-black text-emerald-600 dark:text-emerald-300">{formatProbability(yes.currentOdds)}</p>
           </button>
         )}
         {no && (
@@ -119,7 +122,7 @@ export default function MarketCard({ market, onTrade }: MarketCardProps) {
             className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl p-3 text-center hover:bg-red-100 dark:hover:bg-red-500/20 transition"
           >
             <p className="text-xs font-semibold text-red-700 dark:text-red-400 mb-1">{t('markets.no')}</p>
-            <p className="text-xl font-black text-red-600 dark:text-red-300">{formatOdds(no.currentOdds)}x</p>
+            <p className="text-xl font-black text-red-600 dark:text-red-300">{formatProbability(no.currentOdds)}</p>
           </button>
         )}
       </div>
