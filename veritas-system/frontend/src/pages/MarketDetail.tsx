@@ -7,9 +7,13 @@ import EmailNotify from '../components/EmailNotify';
 import type { WalletState } from '../hooks/useWallet';
 
 function oddsToPercent(oddsRaw: string): number {
-  const decimal = Number(oddsRaw) / 1e9;
-  if (decimal <= 1) return 50;
+  const decimal = Number(oddsRaw);
+  if (!decimal || decimal <= 0) return 50;
   return Math.round((1 / decimal) * 100);
+}
+
+function oddsToDecimal(oddsRaw: string): number {
+  return Number(oddsRaw);
 }
 
 function useCountdown(endTimestamp: number) {
@@ -69,8 +73,8 @@ export default function MarketDetail() {
   const [yes, no] = market.outcomes;
   const yesPercent = yes ? oddsToPercent(yes.currentOdds) : 50;
   const noPercent = no ? oddsToPercent(no.currentOdds) : 50;
-  const yesOdds = (Number(yes?.currentOdds ?? 0) / 1e9).toFixed(2);
-  const noOdds = (Number(no?.currentOdds ?? 0) / 1e9).toFixed(2);
+  const yesOdds = oddsToDecimal(yes?.currentOdds ?? '2').toFixed(2);
+  const noOdds = oddsToDecimal(no?.currentOdds ?? '2').toFixed(2);
   const timeLeft = useCountdown(Number(market.game.startsAt));
 
   return (
@@ -89,7 +93,7 @@ export default function MarketDetail() {
         <p className="text-sm text-gray-500">⏱ {timeLeft}</p>
       </div>
 
-      {/* Probability display — Polymarket style */}
+      {/* Probability display */}
       <div className="card-dark p-6 space-y-4">
         <p className="text-xs text-gray-400 uppercase tracking-wide">Market Probability</p>
 

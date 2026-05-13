@@ -36,13 +36,13 @@ const CHAIN_CONTRACTS: Record<number, { lp: string; proxyFront: string; usdc: st
 };
 
 function oddsToPercent(oddsRaw: string): number {
-  const decimal = Number(oddsRaw) / 1e9;
-  if (decimal <= 1) return 50;
+  const decimal = Number(oddsRaw);
+  if (!decimal || decimal <= 0) return 50;
   return Math.round((1 / decimal) * 100);
 }
 
 function oddsToDecimal(oddsRaw: string): number {
-  return Number(oddsRaw) / 1e9;
+  return Number(oddsRaw);
 }
 
 export default function TradeModal({ market, wallet, onClose }: TradeModalProps) {
@@ -185,7 +185,7 @@ export default function TradeModal({ market, wallet, onClose }: TradeModalProps)
 
         <div className="p-5 space-y-4">
 
-          {/* Outcome selector — Polymarket style with percentages */}
+          {/* Outcome selector */}
           <div>
             <p className="text-xs text-gray-500 mb-2 uppercase tracking-wide">Select Outcome</p>
             <div className="grid grid-cols-2 gap-2">
@@ -216,7 +216,7 @@ export default function TradeModal({ market, wallet, onClose }: TradeModalProps)
                     {opt.percent}%
                   </p>
                   <p className="text-xs text-gray-400 mt-0.5">
-                    Price · {oddsToDecimal(opt.outcome?.currentOdds ?? '2000000000').toFixed(2)}x
+                    Price · {oddsToDecimal(opt.outcome?.currentOdds ?? '2').toFixed(2)}x
                   </p>
                 </button>
               ))}

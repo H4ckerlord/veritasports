@@ -3,10 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 const API_BASE = 'https://api.onchainfeed.org/api/v1/public';
 const ENVIRONMENT = 'PolygonUSDT';
 
-// ── Exported types ──────────────────────────────────────────────
 export interface Outcome {
   outcomeId: string;
-  currentOdds: string;
+  currentOdds: string; // already decimal, e.g. "1.7"
 }
 
 export interface AzuroMarket {
@@ -22,7 +21,6 @@ export interface AzuroMarket {
   outcomes: Outcome[];
 }
 
-// ── Raw API shapes ──────────────────────────────────────────────
 interface RawGame {
   gameId: string;
   title: string;
@@ -38,49 +36,54 @@ interface RawCondition {
   game: { gameId: string };
 }
 
-// ── Fetch helpers ──────────────────────────────────────────────
-async function fetchGames(): Promise<RawGame[]> {
-  const params = new URLSearchParams({
-    environment: ENVIRONMENT,
-    gameState: 'Prematch',
-    orderBy: 'startsAt',
-    orderDirection: 'asc',
-    perPage: '100',
-    page: '1',
-  });
-  const url = `${API_BASE}/market-manager/games-by-filters?${params.toString()}`;
-  const res = await fetch(url);
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Games fetch failed: ${res.status} - ${text}`);
-  }
-  const json = (await res.json()) as { games?: RawGame[] };
-  if (!json.games || json.games.length === 0) {
-    console.warn('[Veritas] No games returned from API.');
-  }
-  return json.games ?? [];
+// ── Fetch ALL games (Prematch + Live) for the map ────────────────
+async function fetchAllGames(): Promise<Map<string, RawGame>> {
+  const gameMap = new Map<string, RawGame>();
+
+  const fetchState = async (state: string) => {
+    let page = 1;
+    while (gameMap.size < 2000) {
+      const params = new URLSearchParams({
+        environment: ENVIRONMENT,
+        gameState: state,
+        orderBy: 'startsAt',
+        orderDirection: 'asc',
+        perPage: '500',
+        page: String(page),
+      });
+      const url = `${API_BASE}/market-manager/games-by-filters?${params.toString()}`;
+      const res = await fetch(url);
+      if (!res.ok) break;
+      const json = (await res.json()) as { games?: RawGame[] };
+      const games = json.games ?? [];
+      if (games.length === 0) break;
+      for (const g of games) gameMap.set(g.gameId, g);
+      page++;
+      if (games.length < 500) break;
+    }
+  };
+
+  await Promise.all([fetchState('Prematch'), fetchState('Live')]);
+  return gameMap;
 }
 
+// ── Fetch conditions for game IDs ───────────────────────────────
 async function fetchConditions(gameIds: string[]): Promise<RawCondition[]> {
   if (gameIds.length === 0) return [];
-  const url = `${API_BASE}/market-manager/conditions-by-game-ids`;
-  const body = JSON.stringify({ environment: ENVIRONMENT, gameIds });
-  console.log('[Veritas] Fetching conditions for', gameIds.length, 'games');
-  const res = await fetch(url, {
+  const res = await fetch(`${API_BASE}/market-manager/conditions-by-game-ids`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body,
+    body: JSON.stringify({ environment: ENVIRONMENT, gameIds }),
   });
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`Conditions fetch failed: ${res.status} - ${text}`);
   }
   const json = (await res.json()) as { conditions?: RawCondition[] };
-  console.log('[Veritas] Received', json.conditions?.length ?? 0, 'conditions');
   return json.conditions ?? [];
 }
 
-// ── Condition → Game map (shared with LiveBetFeed) ──────────────
+// ── Shared cache for condition → game title/sport ───────────────
 let conditionGameMapCache: Map<string, { title: string; sport?: string }> | null = null;
 
 export async function fetchConditionGameMap(): Promise<
@@ -88,17 +91,13 @@ export async function fetchConditionGameMap(): Promise<
 > {
   if (conditionGameMapCache) return conditionGameMapCache;
 
-  console.log('[Veritas] Building condition→game map …');
-  const games = await fetchGames();
-  const allGameIds = games.map((g) => g.gameId);
+  const gameMap = await fetchAllGames();
+  const allGameIds = Array.from(gameMap.keys());
   const conditions = await fetchConditions(allGameIds);
-
-  const gameById = new Map<string, RawGame>();
-  for (const g of games) gameById.set(g.gameId, g);
 
   const map = new Map<string, { title: string; sport?: string }>();
   for (const c of conditions) {
-    const g = gameById.get(c.game.gameId);
+    const g = gameMap.get(c.game.gameId);
     if (c.conditionId && g) {
       map.set(c.conditionId, {
         title: g.title,
@@ -107,7 +106,6 @@ export async function fetchConditionGameMap(): Promise<
     }
   }
   conditionGameMapCache = map;
-  console.log('[Veritas] Map built with', map.size, 'entries');
   return map;
 }
 
@@ -116,24 +114,23 @@ export function clearConditionGameMapCache() {
 }
 
 // ── Main fetcher ────────────────────────────────────────────────
+let cachedMarkets: AzuroMarket[] | null = null;
+let cacheTimestamp = 0;
+
 async function fetchMarketsFromAPI(): Promise<AzuroMarket[]> {
-  console.log('[Veritas] fetchMarketsFromAPI started');
-  const games = await fetchGames();
-  if (games.length === 0) {
-    console.warn('[Veritas] No games — returning empty market list');
-    return [];
-  }
+  const now = Date.now();
+  if (cachedMarkets && now - cacheTimestamp < 15_000) return cachedMarkets;
 
-  const gameById = new Map<string, RawGame>();
-  for (const g of games) gameById.set(g.gameId, g);
+  const gameMap = await fetchAllGames();
+  if (gameMap.size === 0) return [];
 
-  const gameIds = games.map((g) => g.gameId);
+  const gameIds = Array.from(gameMap.keys());
   const conditions = await fetchConditions(gameIds);
 
   const markets = conditions
     .filter((c) => c.outcomes && c.outcomes.length >= 2)
     .map((c) => {
-      const g = gameById.get(c.game.gameId);
+      const g = gameMap.get(c.game.gameId);
       return {
         conditionId: c.conditionId,
         status: c.state,
@@ -154,11 +151,15 @@ async function fetchMarketsFromAPI(): Promise<AzuroMarket[]> {
         })),
       };
     });
-  console.log('[Veritas] Final market count:', markets.length);
+
+  cachedMarkets = markets;
+  cacheTimestamp = now;
   return markets;
 }
 
-// ── React Query hooks ──────────────────────────────────────────
+// Prefetch immediately
+fetchMarketsFromAPI().catch(() => {});
+
 export function useAzuroMarkets() {
   return useQuery({
     queryKey: ['azuro-markets'],
