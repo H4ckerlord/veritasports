@@ -1,11 +1,23 @@
 import { useEffect, useState, useCallback } from 'react';
-import { getSubgraphUrl } from '../hooks/useAzuroMarkets';
+
+// Bet‑history subgraph URLs (V3 for mainnet, V2 for testnet)
+const BET_SUBGRAPH_MAINNET =
+  'https://thegraph.onchainfeed.org/subgraphs/name/azuro-protocol/azuro-api-polygon-v3';
+const BET_SUBGRAPH_TESTNET =
+  'https://api.thegraph.com/subgraphs/name/azuro-protocol/azuro-polygon-amoy-v2';
+
+function getBetsSubgraphUrl(): string {
+  const chainId = String(
+    (import.meta as any).env?.VITE_AZURO_CHAIN_ID ?? '80002'
+  );
+  return chainId === '137' ? BET_SUBGRAPH_MAINNET : BET_SUBGRAPH_TESTNET;
+}
 
 interface LiveBet {
   id: string;
   bettor: string;
   amount: string;
-  createdBlockTimestamp: string; // ✅ changed from 'createdAt'
+  createdBlockTimestamp: string;
   outcome: {
     outcomeId: string;
     condition: {
@@ -69,7 +81,7 @@ export default function LiveBetFeed() {
 
   const fetchBets = useCallback(async () => {
     try {
-      const url = getSubgraphUrl();
+      const url = getBetsSubgraphUrl();
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -105,7 +117,10 @@ export default function LiveBetFeed() {
     return (
       <div className="space-y-2">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-12 rounded-xl bg-gray-100 dark:bg-white/5 animate-pulse" />
+          <div
+            key={i}
+            className="h-12 rounded-xl bg-gray-100 dark:bg-white/5 animate-pulse"
+          />
         ))}
       </div>
     );
@@ -132,7 +147,8 @@ export default function LiveBetFeed() {
   return (
     <div className="space-y-2">
       {bets.map((bet) => {
-        const gameTitle = bet.outcome?.condition?.game?.title ?? 'Unknown Market';
+        const gameTitle =
+          bet.outcome?.condition?.game?.title ?? 'Unknown Market';
         const sport = bet.outcome?.condition?.game?.sport?.name;
         const outId = parseInt(bet.outcome?.outcomeId ?? '0');
         const isYes = outId % 2 === 1;
@@ -155,11 +171,13 @@ export default function LiveBetFeed() {
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0 ml-2">
-              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                isYes
-                  ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
-                  : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
-              }`}>
+              <span
+                className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                  isYes
+                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
+                    : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
+                }`}
+              >
                 {isYes ? 'YES' : 'NO'}
               </span>
               <span className="text-xs font-bold text-gray-900 dark:text-white">
