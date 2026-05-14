@@ -1,11 +1,12 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 
 const API_BASE = 'https://api.onchainfeed.org/api/v1/public';
 const ENVIRONMENT = 'PolygonUSDT';
 
 export interface Outcome {
   outcomeId: string;
-  currentOdds: string; // already decimal, e.g. "1.7"
+  currentOdds: string; // decimal odds e.g. "1.7"
 }
 
 export interface AzuroMarket {
@@ -36,13 +37,16 @@ interface RawCondition {
   game: { gameId: string };
 }
 
-// ── Fetch ALL games (Prematch + Live) for the map ────────────────
+// ── Shared query key for React Query cache ─────────────────────
+export const MARKETS_QUERY_KEY = ['azuro-markets'] as const;
+
+// ── Fetch ALL games ────────────────────────────────────────────
 async function fetchAllGames(): Promise<Map<string, RawGame>> {
   const gameMap = new Map<string, RawGame>();
 
   const fetchState = async (state: string) => {
     let page = 1;
-    while (gameMap.size < 2000) {
+    while (true) {
       const params = new URLSearchParams({
         environment: ENVIRONMENT,
         gameState: state,
@@ -52,14 +56,18 @@ async function fetchAllGames(): Promise<Map<string, RawGame>> {
         page: String(page),
       });
       const url = `${API_BASE}/market-manager/games-by-filters?${params.toString()}`;
-      const res = await fetch(url);
-      if (!res.ok) break;
-      const json = (await res.json()) as { games?: RawGame[] };
-      const games = json.games ?? [];
-      if (games.length === 0) break;
-      for (const g of games) gameMap.set(g.gameId, g);
-      page++;
-      if (games.length < 500) break;
+      try {
+        const res = await fetch(url);
+        if (!res.ok) break;
+        const json = (await res.json()) as { games?: RawGame[] };
+        const games = json.games ?? [];
+        if (games.length === 0) break;
+        for (const g of games) gameMap.set(g.gameId, g);
+        page++;
+        if (games.length < 500) break;
+      } catch {
+        break;
+      }
     }
   };
 
@@ -67,42 +75,37 @@ async function fetchAllGames(): Promise<Map<string, RawGame>> {
   return gameMap;
 }
 
-// ── Fetch conditions for game IDs ───────────────────────────────
+// ── Fetch conditions ───────────────────────────────────────────
 async function fetchConditions(gameIds: string[]): Promise<RawCondition[]> {
   if (gameIds.length === 0) return [];
-  const res = await fetch(`${API_BASE}/market-manager/conditions-by-game-ids`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ environment: ENVIRONMENT, gameIds }),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Conditions fetch failed: ${res.status} - ${text}`);
+  try {
+    const res = await fetch(`${API_BASE}/market-manager/conditions-by-game-ids`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ environment: ENVIRONMENT, gameIds }),
+    });
+    if (!res.ok) return [];
+    const json = (await res.json()) as { conditions?: RawCondition[] };
+    return json.conditions ?? [];
+  } catch {
+    return [];
   }
-  const json = (await res.json()) as { conditions?: RawCondition[] };
-  return json.conditions ?? [];
 }
 
-// ── Shared cache for condition → game title/sport ───────────────
+// ── Condition → game title/sport map (shared cache) ───────────
 let conditionGameMapCache: Map<string, { title: string; sport?: string }> | null = null;
 
-export async function fetchConditionGameMap(): Promise<
+export async function fetchConditionGameMap(): Promise
   Map<string, { title: string; sport?: string }>
 > {
   if (conditionGameMapCache) return conditionGameMapCache;
-
   const gameMap = await fetchAllGames();
-  const allGameIds = Array.from(gameMap.keys());
-  const conditions = await fetchConditions(allGameIds);
-
+  const conditions = await fetchConditions(Array.from(gameMap.keys()));
   const map = new Map<string, { title: string; sport?: string }>();
   for (const c of conditions) {
     const g = gameMap.get(c.game.gameId);
     if (c.conditionId && g) {
-      map.set(c.conditionId, {
-        title: g.title,
-        sport: g.sport?.name,
-      });
+      map.set(c.conditionId, { title: g.title, sport: g.sport?.name });
     }
   }
   conditionGameMapCache = map;
@@ -113,21 +116,22 @@ export function clearConditionGameMapCache() {
   conditionGameMapCache = null;
 }
 
-// ── Main fetcher ────────────────────────────────────────────────
+// ── In-memory cache ────────────────────────────────────────────
 let cachedMarkets: AzuroMarket[] | null = null;
 let cacheTimestamp = 0;
+const CACHE_TTL = 15_000;
 
+// ── Main fetcher ───────────────────────────────────────────────
 async function fetchMarketsFromAPI(): Promise<AzuroMarket[]> {
   const now = Date.now();
-  if (cachedMarkets && now - cacheTimestamp < 15_000) return cachedMarkets;
+  if (cachedMarkets && now - cacheTimestamp < CACHE_TTL) return cachedMarkets;
 
   const gameMap = await fetchAllGames();
   if (gameMap.size === 0) return [];
 
-  const gameIds = Array.from(gameMap.keys());
-  const conditions = await fetchConditions(gameIds);
+  const conditions = await fetchConditions(Array.from(gameMap.keys()));
 
-  const markets = conditions
+  const markets: AzuroMarket[] = conditions
     .filter((c) => c.outcomes && c.outcomes.length >= 2)
     .map((c) => {
       const g = gameMap.get(c.game.gameId);
@@ -147,7 +151,7 @@ async function fetchMarketsFromAPI(): Promise<AzuroMarket[]> {
         },
         outcomes: c.outcomes.map((o) => ({
           outcomeId: o.outcomeId,
-          currentOdds: o.odds,
+          currentOdds: o.odds, // Already decimal e.g. "1.7"
         })),
       };
     });
@@ -157,22 +161,40 @@ async function fetchMarketsFromAPI(): Promise<AzuroMarket[]> {
   return markets;
 }
 
-// Prefetch immediately
+// Prefetch immediately when the module loads
 fetchMarketsFromAPI().catch(() => {});
 
+// ── Hooks ──────────────────────────────────────────────────────
+
 export function useAzuroMarkets() {
+  const queryClient = useQueryClient();
+
+  // Prefetch on mount
+  useEffect(() => {
+    queryClient.prefetchQuery({
+      queryKey: MARKETS_QUERY_KEY,
+      queryFn: fetchMarketsFromAPI,
+      staleTime: CACHE_TTL,
+    });
+  }, [queryClient]);
+
   return useQuery({
-    queryKey: ['azuro-markets'],
+    queryKey: MARKETS_QUERY_KEY,
     queryFn: fetchMarketsFromAPI,
     refetchInterval: 30_000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: false,
     retry: 3,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
-    staleTime: 15_000,
+    staleTime: CACHE_TTL,
+    gcTime: 5 * 60 * 1000,
   });
 }
 
 export function useAzuroMarket(conditionId: string | undefined) {
   const { data: markets, ...rest } = useAzuroMarkets();
-  const market = markets?.find((m) => m.conditionId === conditionId);
+  const market = conditionId
+    ? markets?.find((m) => m.conditionId === conditionId)
+    : undefined;
   return { market, ...rest };
 }
