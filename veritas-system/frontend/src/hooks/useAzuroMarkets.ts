@@ -6,7 +6,7 @@ const ENVIRONMENT = 'PolygonUSDT';
 
 export interface Outcome {
   outcomeId: string;
-  currentOdds: string; // decimal odds e.g. "1.7"
+  currentOdds: string;
 }
 
 export interface AzuroMarket {
@@ -37,10 +37,8 @@ interface RawCondition {
   game: { gameId: string };
 }
 
-// ── Shared query key for React Query cache ─────────────────────
 export const MARKETS_QUERY_KEY = ['azuro-markets'] as const;
 
-// ── Fetch ALL games ────────────────────────────────────────────
 async function fetchAllGames(): Promise<Map<string, RawGame>> {
   const gameMap = new Map<string, RawGame>();
 
@@ -75,7 +73,6 @@ async function fetchAllGames(): Promise<Map<string, RawGame>> {
   return gameMap;
 }
 
-// ── Fetch conditions ───────────────────────────────────────────
 async function fetchConditions(gameIds: string[]): Promise<RawCondition[]> {
   if (gameIds.length === 0) return [];
   try {
@@ -92,12 +89,9 @@ async function fetchConditions(gameIds: string[]): Promise<RawCondition[]> {
   }
 }
 
-// ── Condition → game title/sport map (shared cache) ───────────
 let conditionGameMapCache: Map<string, { title: string; sport?: string }> | null = null;
 
-export async function fetchConditionGameMap(): Promise
-  Map<string, { title: string; sport?: string }>
-> {
+export async function fetchConditionGameMap(): Promise<Map<string, { title: string; sport?: string }>> {
   if (conditionGameMapCache) return conditionGameMapCache;
   const gameMap = await fetchAllGames();
   const conditions = await fetchConditions(Array.from(gameMap.keys()));
@@ -116,12 +110,10 @@ export function clearConditionGameMapCache() {
   conditionGameMapCache = null;
 }
 
-// ── In-memory cache ────────────────────────────────────────────
 let cachedMarkets: AzuroMarket[] | null = null;
 let cacheTimestamp = 0;
 const CACHE_TTL = 15_000;
 
-// ── Main fetcher ───────────────────────────────────────────────
 async function fetchMarketsFromAPI(): Promise<AzuroMarket[]> {
   const now = Date.now();
   if (cachedMarkets && now - cacheTimestamp < CACHE_TTL) return cachedMarkets;
@@ -151,7 +143,7 @@ async function fetchMarketsFromAPI(): Promise<AzuroMarket[]> {
         },
         outcomes: c.outcomes.map((o) => ({
           outcomeId: o.outcomeId,
-          currentOdds: o.odds, // Already decimal e.g. "1.7"
+          currentOdds: o.odds,
         })),
       };
     });
@@ -161,15 +153,11 @@ async function fetchMarketsFromAPI(): Promise<AzuroMarket[]> {
   return markets;
 }
 
-// Prefetch immediately when the module loads
 fetchMarketsFromAPI().catch(() => {});
-
-// ── Hooks ──────────────────────────────────────────────────────
 
 export function useAzuroMarkets() {
   const queryClient = useQueryClient();
 
-  // Prefetch on mount
   useEffect(() => {
     queryClient.prefetchQuery({
       queryKey: MARKETS_QUERY_KEY,
